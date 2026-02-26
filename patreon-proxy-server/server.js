@@ -294,6 +294,12 @@ app.use(async (req, res, next) => {
     const hasAuthToken = !!req.headers['x-auth-token'];
     const clientVersion = req.headers['x-client-version'] || null;
 
+    // Static read-only endpoints bypass rate limiter entirely — no auth, no Redis,
+    // no computational cost. Safe to serve unconditionally.
+    if (req.method === 'GET' && req.path === '/packs/manifest') {
+        return next();
+    }
+
     // Auth endpoints bypass global IP rate limiter — protected by their own per-IP
     // rate limit instead. This prevents legitimate users from being collaterally blocked
     // when sharing IPs with attack traffic (residential botnet / CGNAT / VPN).
