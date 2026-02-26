@@ -14,7 +14,13 @@ const cors = require('cors');
 const crypto = require('crypto');
 const { Redis } = require('@upstash/redis');
 
-const EMAIL_HASH_KEY = process.env.EMAIL_HASH_KEY || (process.env.VERCEL ? (() => { throw new Error('EMAIL_HASH_KEY must be set in production'); })() : 'dev-fallback-key');
+const EMAIL_HASH_KEY = process.env.EMAIL_HASH_KEY || (() => {
+    if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+        throw new Error('EMAIL_HASH_KEY must be set in production');
+    }
+    console.warn('[STARTUP WARNING] EMAIL_HASH_KEY not set — using dev fallback. DO NOT run in production without it.');
+    return 'dev-fallback-key';
+})();
 function hashEmail(email) {
     if (!email) return null;
     return crypto.createHmac('sha256', EMAIL_HASH_KEY).update(email.toLowerCase()).digest('hex');
@@ -26,7 +32,15 @@ app.use(cors({
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'X-Auth-Token', 'X-CCP-Timestamp', 'X-CCP-Signature', 'X-Client-Version']
 }));
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({
+    limit: '1mb',
+    verify: (req, res, buf) => {
+        // Save raw body for HMAC verification on sync endpoint
+        if (req.url && req.url.startsWith('/v2/user/sync')) {
+            req.rawBody = buf.toString('utf8');
+        }
+    }
+}));
 
 // =============================================================================
 // SECURITY HELPERS
@@ -73,6 +87,23 @@ function isValidUnifiedId(id) {
     return typeof id === 'string' && /^u_[a-z0-9]{8,24}$/.test(id);
 }
 
+/**
+ * Sanitize a string for safe logging (prevent log injection via newlines/control chars).
+ */
+function sanitizeForLog(str) {
+    if (typeof str !== 'string') return String(str);
+    return str.replace(/[\r\n\t\x00-\x1f\x7f]/g, '');
+}
+
+/**
+ * Validate display name characters (strict allowlist).
+ * Only allows alphanumeric, spaces, hyphens, underscores, periods, and common Unicode letters.
+ */
+const DISPLAY_NAME_INVALID_CHARS = /[^a-zA-Z0-9\u00C0-\u024F\u0400-\u04FF\u3000-\u9FFF _.\-]/;
+function isValidDisplayNameChars(name) {
+    return !DISPLAY_NAME_INVALID_CHARS.test(name);
+}
+
 // =============================================================================
 // REQUEST LOGGING MIDDLEWARE
 // =============================================================================
@@ -82,9 +113,9 @@ const requestCounts = new Map();
 const RATE_WINDOW_MS = 60000; // 1 minute window
 
 // Rate limit thresholds
-const IP_RATE_LIMIT = 35;            // Max requests per IP per minute before blocking
-const IP_AUTH_FAIL_LIMIT = 20;       // Max auth failures per IP per minute before blocking
-const IP_BLOCK_DURATION_MS = 300000; // Block IP for 5 minutes after exceeding limits
+const IP_RATE_LIMIT = 50;            // Max requests per IP per minute before blocking
+const IP_AUTH_FAIL_LIMIT = 10;       // Max auth failures per IP per minute before blocking
+const IP_BLOCK_DURATION_MS = 1800000; // Block IP for 30 minutes after exceeding limits
 
 // Clean up old entries every 5 minutes, cap Map size at 10,000 entries
 const MAX_REQUEST_COUNT_ENTRIES = 10000;
@@ -113,8 +144,8 @@ app.use(async (req, res, next) => {
     const start = Date.now();
     // Use x-real-ip (set by Vercel) or rightmost x-forwarded-for (appended by proxy, not client-controllable)
     const ip = req.headers['x-real-ip']?.trim() || req.headers['x-forwarded-for']?.split(',').pop()?.trim() || req.ip || 'unknown';
-    const ua = req.headers['user-agent'] || 'none';
-    const unifiedId = req.body?.unified_id || req.query?.unified_id || null;
+    const ua = sanitizeForLog((req.headers['user-agent'] || 'none'));
+    const unifiedId = sanitizeForLog(req.body?.unified_id || req.query?.unified_id || '-');
     const hasAuthToken = !!req.headers['x-auth-token'];
     const clientVersion = req.headers['x-client-version'] || null;
 
@@ -168,7 +199,7 @@ app.use(async (req, res, next) => {
     // Log on response finish
     res.on('finish', () => {
         const duration = Date.now() - start;
-        const logEntry = `[REQ] ${req.method} ${req.path} ${res.statusCode} ${duration}ms | ip=${ip} uid=${unifiedId || '-'} auth=${hasAuthToken} ua=${ua.substring(0, 80)}`;
+        const logEntry = `[REQ] ${req.method} ${req.path} ${res.statusCode} ${duration}ms | ip=${ip} uid=${unifiedId} auth=${hasAuthToken} ua=${ua.substring(0, 80)}`;
 
         // Always log non-GET requests and errors
         if (req.method !== 'GET' || res.statusCode >= 400) {
@@ -178,7 +209,7 @@ app.use(async (req, res, next) => {
         // Track auth failures and block IPs with too many
         if (res.statusCode === 401 || res.statusCode === 403) {
             ipEntry.authFailures++;
-            console.warn(`[SECURITY] Auth failure: ${req.method} ${req.path} ${res.statusCode} | ip=${ip} uid=${unifiedId || '-'} auth=${hasAuthToken} cv=${clientVersion || 'none'}`);
+            console.warn(`[SECURITY] Auth failure: ${req.method} ${req.path} ${res.statusCode} | ip=${ip} uid=${unifiedId} auth=${hasAuthToken} cv=${clientVersion || 'none'}`);
 
             if (ipEntry.authFailures >= IP_AUTH_FAIL_LIMIT && (!ipEntry.blockedUntil || now > ipEntry.blockedUntil)) {
                 ipEntry.blockedUntil = Date.now() + IP_BLOCK_DURATION_MS;
@@ -190,7 +221,7 @@ app.use(async (req, res, next) => {
 
         // Log missing client version on V2 endpoints (future enforcement)
         if (req.path.startsWith('/v2/') && !clientVersion) {
-            console.warn(`[SECURITY] Missing X-Client-Version: ${req.method} ${req.path} | ip=${ip} uid=${unifiedId || '-'} ua=${ua.substring(0, 40)}`);
+            console.warn(`[SECURITY] Missing X-Client-Version: ${req.method} ${req.path} | ip=${ip} uid=${unifiedId} ua=${ua.substring(0, 40)}`);
         }
 
         // Alert on high request rate from single IP (>100/min)
@@ -322,11 +353,11 @@ function getTodayKey() {
  */
 async function checkRateLimit(userId, dailyLimit) {
     const limit = dailyLimit || RATE_LIMIT.DAILY_REQUESTS;
-    // If Redis not configured, allow all requests
+    // If Redis not configured, deny requests (prevents unbounded cost on OpenRouter)
     if (!redis) {
         return {
-            allowed: true,
-            remaining: limit,
+            allowed: false,
+            remaining: 0,
             used: 0,
             error: true
         };
@@ -363,11 +394,11 @@ async function checkRateLimit(userId, dailyLimit) {
         };
     } catch (error) {
         console.error('Rate limit check failed:', error.message);
-        // If Redis fails, allow the request but log it
+        // If Redis fails, DENY the request to prevent cost amplification
         return {
-            allowed: true,
-            remaining: limit,
-            used: 0,
+            allowed: false,
+            remaining: 0,
+            used: limit,
             error: true
         };
     }
@@ -443,6 +474,25 @@ const CONFIG = {
 };
 
 // =============================================================================
+// STARTUP VALIDATION - Warn about missing critical secrets
+// =============================================================================
+if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+    const requiredSecrets = ['ADMIN_TOKEN', 'CCP_HMAC_SECRET', 'EMAIL_HASH_KEY'];
+    const criticalSecrets = ['PATREON_CLIENT_SECRET', 'DISCORD_CLIENT_SECRET', 'OPENROUTER_API_KEY'];
+    const missingRequired = requiredSecrets.filter(name => !process.env[name]);
+    if (missingRequired.length > 0) {
+        const msg = `[STARTUP FATAL] Missing required secrets: ${missingRequired.join(', ')}`;
+        console.error(msg);
+        throw new Error(msg);
+    }
+    for (const name of criticalSecrets) {
+        if (!process.env[name]) {
+            console.warn(`[STARTUP WARNING] Secret ${name} is not configured — related features will fail.`);
+        }
+    }
+}
+
+// =============================================================================
 // WHITELIST - Users who get Tier 1 access regardless of subscription
 // Loaded from Redis (keys: whitelist:emails, whitelist:names) into in-memory Sets.
 // isWhitelisted() stays synchronous — middleware ensures cache is loaded before requests.
@@ -493,7 +543,7 @@ function isWhitelisted(email, name, displayName = null) {
 
 // Debug endpoint to test whitelist (admin only)
 app.get('/debug/whitelist', (req, res) => {
-    const adminToken = req.query.admin_token || req.headers['x-admin-token'];
+    const adminToken = req.headers['x-admin-token'];
     if (!verifyAdminToken(adminToken)) {
         return res.status(403).json({ error: 'Unauthorized' });
     }
@@ -628,7 +678,7 @@ app.post('/admin/whitelist/remove', async (req, res) => {
 // List all whitelist entries (from Redis — authoritative)
 app.get('/admin/whitelist/list', async (req, res) => {
     try {
-        const adminToken = req.query.admin_token || req.headers['x-admin-token'];
+        const adminToken = req.headers['x-admin-token'];
         if (!verifyAdminToken(adminToken)) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
@@ -1089,7 +1139,7 @@ app.get('/patreon/validate', async (req, res) => {
 
         // Check whitelist - if whitelisted, grant Tier 2 access
         // Checks: email, Patreon name, AND leaderboard display name
-        const whitelisted = isWhitelisted(tierInfo.patron_email, tierInfo.patron_name, displayName);
+        const whitelisted = isWhitelisted(tierInfo.patron_email, null, displayName);
         tierInfo.is_whitelisted = whitelisted;
         if (whitelisted) {
             if (tierInfo.tier < 2) {
@@ -1169,7 +1219,7 @@ app.get('/patreon/validate', async (req, res) => {
 app.get('/patreon/debug-campaigns', async (req, res) => {
     try {
         // Admin-only: prevents arbitrary users from using this debug endpoint
-        const { admin_token } = req.query;
+        const admin_token = req.headers['x-admin-token'];
         if (!admin_token || !verifyAdminToken(admin_token)) {
             return res.status(403).json({ error: 'Admin authorization required' });
         }
@@ -1397,8 +1447,8 @@ app.post('/discord/community-webhook', async (req, res) => {
 
         // Require authenticated user to prevent fake webhook posts
         const { type, unified_id } = req.body;
-        if (!unified_id) {
-            return res.status(400).json({ error: 'unified_id is required' });
+        if (!unified_id || !isValidUnifiedId(unified_id)) {
+            return res.status(400).json({ error: 'Valid unified_id is required' });
         }
         if (!redis) return res.status(503).json({ error: 'Service unavailable' });
 
@@ -1652,6 +1702,17 @@ app.post('/ai/chat', async (req, res) => {
             return res.status(401).json({ error: 'Authorization header required' });
         }
 
+        // Per-IP cooldown to prevent Patreon API amplification (5s between V1 AI calls)
+        const chatIp = req.headers['x-real-ip'] || req.ip || 'unknown';
+        if (redis) {
+            const v1ChatCooldownKey = `v1_chat_cooldown:${chatIp}`;
+            const onCooldown = await redis.get(v1ChatCooldownKey);
+            if (onCooldown) {
+                return res.status(429).json({ error: 'V1 chat cooldown active', retry_after: 5 });
+            }
+            await redis.set(v1ChatCooldownKey, '1', { ex: 5 });
+        }
+
         const accessToken = authHeader.substring(7);
 
         // Verify subscription tier
@@ -1689,7 +1750,7 @@ app.post('/ai/chat', async (req, res) => {
 
         // Check tier OR whitelist OR active patron status
         // (Active patrons with tier 0 may have payment processing delays - trust Patreon's active status)
-        const whitelisted = isWhitelisted(tierInfo.patron_email, tierInfo.patron_name, displayName);
+        const whitelisted = isWhitelisted(tierInfo.patron_email, null, displayName);
         const effectiveTier = tierInfo.is_active && tierInfo.tier < 1 ? 1 : tierInfo.tier;
 
         if (effectiveTier < 1 && !whitelisted) {
@@ -2335,7 +2396,7 @@ app.post('/auth/lookup', async (req, res) => {
             result.provider_data = {
                 tier: tierInfo.tier,
                 is_active: tierInfo.is_active,
-                is_whitelisted: isWhitelisted(email, tierInfo.patron_name, result.display_name)
+                is_whitelisted: isWhitelisted(email, null, result.display_name)
             };
         } else {
             const discordUser = await getDiscordUser(accessToken);
@@ -2394,6 +2455,10 @@ app.post('/auth/register', async (req, res) => {
             return res.status(400).json({ error: 'Display name must be 2-20 characters' });
         }
 
+        if (!isValidDisplayNameChars(trimmedName)) {
+            return res.status(400).json({ error: 'Display name contains invalid characters' });
+        }
+
         let providerId, providerData;
 
         if (provider === 'patreon') {
@@ -2404,7 +2469,7 @@ app.post('/auth/register', async (req, res) => {
                 email: tierInfo.patron_email, // used internally for hashing, not sent to client
                 tier: tierInfo.tier,
                 is_active: tierInfo.is_active,
-                is_whitelisted: isWhitelisted(tierInfo.patron_email, tierInfo.patron_name, null)
+                is_whitelisted: isWhitelisted(tierInfo.patron_email, null, null)
             };
         } else {
             const discordUser = await getDiscordUser(accessToken);
@@ -2476,7 +2541,7 @@ app.post('/auth/link-provider', async (req, res) => {
                 email: tierInfo.patron_email, // used internally for hashing, not sent to client
                 tier: tierInfo.tier,
                 is_active: tierInfo.is_active,
-                is_whitelisted: isWhitelisted(tierInfo.patron_email, tierInfo.patron_name, null)
+                is_whitelisted: isWhitelisted(tierInfo.patron_email, null, null)
             };
         } catch (patreonError) {
             // Try Discord
@@ -2496,6 +2561,22 @@ app.post('/auth/link-provider', async (req, res) => {
         // unified_id is required — no more email-based auto-linking (prevents account takeover)
         if (!unified_id) {
             return res.status(400).json({ error: 'unified_id is required. Use the auth endpoints to find your account first.' });
+        }
+
+        // Validate unified_id format to prevent Redis key injection
+        if (!isValidUnifiedId(unified_id)) {
+            return res.status(400).json({ error: 'Invalid unified_id format' });
+        }
+
+        // Verify the caller owns this account via X-Auth-Token (prevents IDOR — linking to someone else's account)
+        const targetUserData = await redis.get(`user:${unified_id}`);
+        if (!targetUserData) {
+            return res.status(404).json({ error: 'Account not found' });
+        }
+        const targetUser = typeof targetUserData === 'string' ? JSON.parse(targetUserData) : targetUserData;
+        const authCheck = validateAuthToken(req, targetUser);
+        if (!authCheck.valid) {
+            return res.status(401).json({ error: 'X-Auth-Token required to link providers to this account' });
         }
 
         const result = await linkProviderToUser(unified_id, detectedProvider, providerId, providerData);
@@ -2556,7 +2637,7 @@ app.post('/auth/claim', async (req, res) => {
                 email: tierInfo.patron_email, // used internally for hashing, not sent to client
                 tier: tierInfo.tier,
                 is_active: tierInfo.is_active,
-                is_whitelisted: isWhitelisted(tierInfo.patron_email, tierInfo.patron_name, display_name)
+                is_whitelisted: isWhitelisted(tierInfo.patron_email, null, display_name)
             };
         } else {
             const discordUser = await getDiscordUser(accessToken);
@@ -2682,10 +2763,19 @@ app.get('/user/profile', async (req, res) => {
         // Profile is stored as JSON string
         const profileData = typeof profile === 'string' ? JSON.parse(profile) : profile;
 
+        // Filter profile to safe fields only (never expose auth_token_hash, anti_cheat_flags, etc.)
         res.json({
             exists: true,
             user_id: userId,
-            profile: profileData
+            profile: {
+                display_name: profileData.display_name || null,
+                xp: profileData.xp || 0,
+                level: profileData.level || 1,
+                achievements: profileData.achievements || [],
+                stats: profileData.stats || {},
+                updated_at: profileData.updated_at,
+                last_session: profileData.last_session
+            }
         });
     } catch (error) {
         console.error('Profile load error:', error.message);
@@ -2704,6 +2794,17 @@ app.post('/user/sync', async (req, res) => {
         const authHeader = req.headers.authorization;
         if (!authHeader?.startsWith('Bearer ')) {
             return res.status(401).json({ error: 'Authorization header required' });
+        }
+
+        // Per-IP cooldown to prevent Patreon API amplification
+        const syncIp = req.headers['x-real-ip'] || req.ip || 'unknown';
+        if (redis) {
+            const v1SyncCooldownKey = `v1_sync_cooldown:${syncIp}`;
+            const onCooldown = await redis.get(v1SyncCooldownKey);
+            if (onCooldown) {
+                return res.status(429).json({ error: 'V1 sync cooldown active', retry_after: 30 });
+            }
+            await redis.set(v1SyncCooldownKey, '1', { ex: 30 });
         }
 
         const accessToken = authHeader.substring(7);
@@ -2739,7 +2840,7 @@ app.post('/user/sync', async (req, res) => {
         // Check Patreon status live during sync (pledge >= 5 cents OR whitelisted)
         // Now checks display_name from existing profile OR request body
         const displayNameToCheck = existing?.display_name || requestDisplayName || null;
-        const isWhitelistedUser = isWhitelisted(tierInfo.patron_email, tierInfo.patron_name, displayNameToCheck);
+        const isWhitelistedUser = isWhitelisted(tierInfo.patron_email, null, displayNameToCheck);
         const hasActivePledge = tierInfo.is_active && tierInfo.pledge_cents >= 5;
         const effectiveTier = (isWhitelistedUser || hasActivePledge) ? Math.max(tierInfo.tier, isWhitelistedUser ? 2 : 1) : tierInfo.tier;
 
@@ -2768,6 +2869,8 @@ app.post('/user/sync', async (req, res) => {
         if (existing?.stats) {
             mergedStats = { ...existing.stats };
             for (const [statKey, statValue] of Object.entries(stats || {})) {
+                // Prevent prototype pollution
+                if (statKey === '__proto__' || statKey === 'constructor' || statKey === 'prototype') continue;
                 // Skip streak stats when admin has force-set them
                 if (hasForceStreakOverrideLegacy && STREAK_STAT_KEYS_LEGACY.has(statKey)) {
                     continue;
@@ -2841,6 +2944,17 @@ app.post('/user/heartbeat', async (req, res) => {
         const authHeader = req.headers.authorization;
         if (!authHeader?.startsWith('Bearer ')) {
             return res.status(401).json({ error: 'Authorization header required' });
+        }
+
+        // Per-IP cooldown to prevent Patreon API amplification
+        const hbIp = req.headers['x-real-ip'] || req.ip || 'unknown';
+        if (redis) {
+            const v1HbCooldownKey = `v1_heartbeat_cooldown:${hbIp}`;
+            const onCooldown = await redis.get(v1HbCooldownKey);
+            if (onCooldown) {
+                return res.status(429).json({ error: 'V1 heartbeat cooldown active', retry_after: 60 });
+            }
+            await redis.set(v1HbCooldownKey, '1', { ex: 60 });
         }
 
         const accessToken = authHeader.substring(7);
@@ -2948,9 +3062,8 @@ app.post('/user/set-display-name', async (req, res) => {
             return res.status(400).json({ error: 'Display name must be 2-20 characters' });
         }
 
-        // Check for inappropriate content (basic filter)
-        const inappropriate = /[<>{}\\\/\[\]]/g;
-        if (inappropriate.test(trimmedName)) {
+        // Strict character validation (prevent Redis key injection, log injection)
+        if (!isValidDisplayNameChars(trimmedName)) {
             return res.status(400).json({ error: 'Display name contains invalid characters' });
         }
 
@@ -3086,9 +3199,8 @@ app.post('/user/set-display-name-discord', async (req, res) => {
             return res.status(400).json({ error: 'Display name must be 2-20 characters' });
         }
 
-        // Check for inappropriate content (basic filter)
-        const inappropriate = /[<>{}\\\/\[\]]/g;
-        if (inappropriate.test(trimmedName)) {
+        // Strict character validation (prevent Redis key injection, log injection)
+        if (!isValidDisplayNameChars(trimmedName)) {
             return res.status(400).json({ error: 'Display name contains invalid characters' });
         }
 
@@ -3274,6 +3386,9 @@ app.get('/user/profile-discord', async (req, res) => {
                         // Return hint only — do NOT auto-link or write to Redis
                         console.log(`[V1] Email match found for Discord ${user.id} → Patreon ${patreonUserId} (hint only)`);
 
+                        const parsedProfile = existingProfile
+                            ? (typeof existingProfile === 'string' ? JSON.parse(existingProfile) : existingProfile)
+                            : null;
                         return res.json({
                             exists: true,
                             user_id: user.id,
@@ -3281,9 +3396,14 @@ app.get('/user/profile-discord', async (req, res) => {
                             can_auto_link: true,
                             auto_link_unified_id: patreonUserId,
                             auto_link_display_name: patreonProfile.display_name,
-                            profile: existingProfile
-                                ? (typeof existingProfile === 'string' ? JSON.parse(existingProfile) : existingProfile)
-                                : null
+                            profile: parsedProfile ? {
+                                display_name: parsedProfile.display_name || null,
+                                xp: parsedProfile.xp || 0,
+                                level: parsedProfile.level || 1,
+                                achievements: parsedProfile.achievements || [],
+                                stats: parsedProfile.stats || {},
+                                updated_at: parsedProfile.updated_at
+                            } : null
                         });
                     }
                 }
@@ -3733,6 +3853,15 @@ app.get('/user/lookup', async (req, res) => {
         if (!redis) {
             return res.status(503).json({ error: 'Service not available' });
         }
+
+        // Per-IP cooldown (2s) to prevent mass enumeration
+        const lookupIp = req.headers['x-real-ip'] || req.ip || 'unknown';
+        const lookupCooldownKey = `lookup_cooldown:${lookupIp}`;
+        const onCooldown = await redis.get(lookupCooldownKey);
+        if (onCooldown) {
+            return res.status(429).json({ error: 'Lookup cooldown active', retry_after: 2 });
+        }
+        await redis.set(lookupCooldownKey, '1', { ex: 2 });
 
         const displayName = req.query.display_name;
         if (!displayName) {
@@ -4192,7 +4321,8 @@ app.post('/admin/reset-progress', async (req, res) => {
  */
 app.get('/admin/user-info', async (req, res) => {
     try {
-        const { display_name, admin_token } = req.query;
+        const { display_name } = req.query;
+        const admin_token = req.headers['x-admin-token'];
 
         // Admin token check
         if (!verifyAdminToken(admin_token)) {
@@ -4316,7 +4446,7 @@ app.post('/admin/cleanup-index', async (req, res) => {
  */
 app.get('/admin/scan-orphaned-indexes', async (req, res) => {
     try {
-        const { admin_token } = req.query;
+        const admin_token = req.headers['x-admin-token'];
         if (!verifyAdminToken(admin_token)) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
@@ -4860,7 +4990,8 @@ app.post('/admin/link-accounts', async (req, res) => {
  */
 app.get('/admin/search-profiles', async (req, res) => {
     try {
-        const { pattern, admin_token } = req.query;
+        const { pattern } = req.query;
+        const admin_token = req.headers['x-admin-token'];
         if (!verifyAdminToken(admin_token)) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
@@ -4905,7 +5036,7 @@ app.get('/admin/search-profiles', async (req, res) => {
  */
 app.get('/admin/scan-unified-users', async (req, res) => {
     try {
-        const { admin_token } = req.query;
+        const admin_token = req.headers['x-admin-token'];
         if (!verifyAdminToken(admin_token)) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
@@ -5105,7 +5236,8 @@ function isAllowedKeyPrefix(key) {
  */
 app.get('/admin/get-key', async (req, res) => {
     try {
-        const { key, admin_token } = req.query;
+        const { key } = req.query;
+        const admin_token = req.headers['x-admin-token'];
         if (!verifyAdminToken(admin_token)) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
@@ -5609,7 +5741,8 @@ app.post('/admin/capture-legacy-users', async (req, res) => {
  */
 app.get('/admin/season0-lookup', async (req, res) => {
     try {
-        const { admin_token, provider, provider_id } = req.query;
+        const { provider, provider_id } = req.query;
+        const admin_token = req.headers['x-admin-token'];
         if (!verifyAdminToken(admin_token)) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
@@ -5871,6 +6004,9 @@ app.post('/v2/auth/discord', async (req, res) => {
         const trimmedName = display_name.trim();
         if (!trimmedName) {
             return res.status(400).json({ error: 'display_name cannot be empty' });
+        }
+        if (!isValidDisplayNameChars(trimmedName)) {
+            return res.status(400).json({ error: 'display_name contains invalid characters' });
         }
 
         // CLEANUP: Delete any old user data for this discord_id before creating new account
@@ -6316,6 +6452,9 @@ app.post('/v2/auth/patreon', async (req, res) => {
         const trimmedName = display_name.trim();
         if (!trimmedName) {
             return res.status(400).json({ error: 'display_name cannot be empty' });
+        }
+        if (!isValidDisplayNameChars(trimmedName)) {
+            return res.status(400).json({ error: 'display_name contains invalid characters' });
         }
 
         // CLEANUP: Delete any old user data for this patreon_id before creating new account
@@ -7366,6 +7505,14 @@ app.post('/v2/user/update', async (req, res) => {
             console.log(`[AUTH] ${authCheck.missing ? 'Old client (token not sent)' : 'Legacy user (no token hash)'} for ${unified_id} on ${req.path}`);
         }
 
+        // Per-user cooldown: 10s minimum between updates (after auth to prevent unauthenticated abuse)
+        const updateCooldownKey = `update_cooldown:${unified_id}`;
+        const onUpdateCooldown = await redis.get(updateCooldownKey);
+        if (onUpdateCooldown) {
+            return res.status(429).json({ error: 'Update cooldown active', retry_after: 10 });
+        }
+        await redis.set(updateCooldownKey, '1', { ex: 10 });
+
         const currentSeason = getCurrentSeason();
 
         // Check if user needs season reset (if their current_season doesn't match)
@@ -7494,6 +7641,9 @@ app.post('/v2/user/change-display-name', async (req, res) => {
         if (!redis) return res.status(503).json({ error: 'Redis not available' });
 
         const trimmed = new_display_name.trim();
+        if (!isValidDisplayNameChars(trimmed)) {
+            return res.status(400).json({ error: 'Display name contains invalid characters' });
+        }
         if (trimmed.length < 2 || trimmed.length > 20) {
             return res.status(400).json({ error: 'Display name must be 2-20 characters' });
         }
@@ -7514,6 +7664,16 @@ app.post('/v2/user/change-display-name', async (req, res) => {
             if (authCheck.legacy) {
                 console.log(`[AUTH] ${authCheck.missing ? 'Old client (token not sent)' : 'Legacy user (no token hash)'} for ${unified_id} on ${req.path}`);
             }
+        }
+
+        // Per-user cooldown: 60s minimum between display name changes (after auth, admin bypass)
+        if (!isAdmin) {
+            const nameCooldownKey = `name_change_cooldown:${unified_id}`;
+            const onNameCooldown = await redis.get(nameCooldownKey);
+            if (onNameCooldown) {
+                return res.status(429).json({ error: 'Display name change cooldown active', retry_after: 60 });
+            }
+            await redis.set(nameCooldownKey, '1', { ex: 60 });
         }
 
         const oldName = user.display_name;
@@ -7661,7 +7821,7 @@ app.post('/v2/user/use-oopsie', async (req, res) => {
  * GET /v3/leaderboard
  * New leaderboard endpoint using Redis sorted sets.
  * Query: ?season=YYYY-MM (optional, defaults to current)
- *        &limit=N (default 200, max 1000)
+ *        &limit=N (default 200, max 5000)
  *        &offset=N (for pagination)
  */
 // In-memory leaderboard cache (reduces Redis reads from ~2,260 per request to ~3 per cache refresh)
@@ -7678,8 +7838,15 @@ app.get('/v3/leaderboard', async (req, res) => {
         if (!/^\d{4}-\d{2}$/.test(season)) {
             return res.status(400).json({ error: 'Invalid season format. Expected YYYY-MM.' });
         }
-        let limit = parseInt(req.query.limit) || 200;
-        limit = Math.max(Math.min(limit, 10000), 1);
+        // Restrict season range to prevent cache pollution (current year +/- 1)
+        const seasonYear = parseInt(season.substring(0, 4), 10);
+        const seasonMonth = parseInt(season.substring(5, 7), 10);
+        const currentYear = new Date().getFullYear();
+        if (seasonYear < currentYear - 1 || seasonYear > currentYear + 1 || seasonMonth < 1 || seasonMonth > 12) {
+            return res.status(400).json({ error: 'Season out of valid range.' });
+        }
+        let limit = parseInt(req.query.limit, 10) || 200;
+        limit = Math.max(Math.min(limit, 5000), 1);
         const offset = parseInt(req.query.offset) || 0;
 
         // Check cache (keyed by season since limit/offset are applied post-fetch)
@@ -7705,8 +7872,9 @@ app.get('/v3/leaderboard', async (req, res) => {
 
         const leaderboardKey = `leaderboard:${season}`;
 
-        // Get ALL ranked users from sorted set (highest XP first) for caching
-        const rankedMembers = await redis.zrange(leaderboardKey, 0, -1, { rev: true, withScores: true });
+        // Get top 5000 ranked users from sorted set (highest XP first) for caching
+        // Capped to prevent unbounded Redis fetch on large leaderboards
+        const rankedMembers = await redis.zrange(leaderboardKey, 0, 4999, { rev: true, withScores: true });
 
         // Build list of {unifiedId, xp} from ranked members.
         // Upstash SDK may return objects [{member/value, score}, ...] or a flat array [member, score, ...].
@@ -8269,12 +8437,12 @@ app.post('/v2/user/sync', async (req, res) => {
         if (ccpTimestamp && ccpSignature) {
             const hmacSecret = process.env.CCP_HMAC_SECRET || '';
             if (!hmacSecret) {
-                // Secret not configured — cannot validate, allow but log loudly
-                console.error('[Anti-cheat] CCP_HMAC_SECRET not configured — HMAC enforcement disabled. SET THIS ENV VAR.');
-                hmacValid = true; // bypass when server can't validate
+                // Secret not configured — reject request (never bypass HMAC validation)
+                console.error('[Anti-cheat] CCP_HMAC_SECRET not configured — rejecting sync. SET THIS ENV VAR.');
+                return res.status(503).json({ error: 'Server HMAC configuration error. Contact support.' });
             } else {
                 const keyMaterial = `${unified_id}:${hmacSecret}`;
-                const rawBody = JSON.stringify(req.body);
+                const rawBody = req.rawBody || JSON.stringify(req.body);
                 const payload = `${ccpTimestamp}:${rawBody}`;
 
                 const expectedSig = crypto.createHmac('sha256', keyMaterial).update(payload).digest('hex');
@@ -8282,10 +8450,11 @@ app.post('/v2/user/sync', async (req, res) => {
                 // Check timestamp within 5-minute window
                 const tsAge = Math.abs(Date.now() / 1000 - parseInt(ccpTimestamp));
 
-                if (timingSafeCompare(expectedSig, ccpSignature) && tsAge < 300) {
+                const sigMatch = timingSafeCompare(expectedSig, ccpSignature);
+                if (sigMatch && tsAge < 300) {
                     hmacValid = true;
                 } else {
-                    console.log(`[Anti-cheat] HMAC failed for ${unified_id}: sig_match=${timingSafeCompare(expectedSig, ccpSignature)}, ts_age=${Math.round(tsAge)}s`);
+                    console.log(`[Anti-cheat] HMAC failed for ${unified_id}: sig_match=${sigMatch}, ts_age=${Math.round(tsAge)}s`);
                 }
             }
         }
@@ -8530,6 +8699,8 @@ app.post('/v2/user/sync', async (req, res) => {
         if (stats && typeof stats === 'object') {
             user.stats = user.stats || {};
             for (const [key, value] of Object.entries(stats)) {
+                // Prevent prototype pollution
+                if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
                 // Skip streak stats when admin has force-set them - preserve admin values
                 if (hasForceStreakOverride && STREAK_STAT_KEYS.has(key)) {
                     continue;
@@ -8792,6 +8963,14 @@ app.post('/v2/user/heartbeat', async (req, res) => {
             }
         }
         // Legacy users (no auth_token_hash) pass through — they'll get a token on next login
+
+        // Per-user cooldown: 30s minimum between heartbeats (after auth to prevent unauthenticated abuse)
+        const hbCooldownKey = `heartbeat_cooldown:${unified_id}`;
+        const onHbCooldown = await redis.get(hbCooldownKey);
+        if (onHbCooldown) {
+            return res.status(429).json({ error: 'Heartbeat cooldown active', retry_after: 30 });
+        }
+        await redis.set(hbCooldownKey, '1', { ex: 30 });
 
         user.last_seen = new Date().toISOString();
 
@@ -10162,7 +10341,7 @@ app.post('/admin/quests/update', async (req, res) => {
  * Get all quest definitions including inactive seasonal (requires admin token)
  */
 app.get('/admin/quests/get', async (req, res) => {
-    const admin_token = req.query.admin_token;
+    const admin_token = req.headers['x-admin-token'];
 
     if (!verifyAdminToken(admin_token)) {
         return res.status(401).json({ error: 'Invalid admin token' });
@@ -10974,7 +11153,7 @@ app.post('/admin/start-new-season', async (req, res) => {
  */
 app.get('/admin/leaderboard-snapshot/:season', async (req, res) => {
     try {
-        const admin_token = req.query.admin_token;
+        const admin_token = req.headers['x-admin-token'];
         if (!verifyAdminToken(admin_token)) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
@@ -11718,7 +11897,8 @@ app.post('/admin/set-highest-level', async (req, res) => {
  */
 app.get('/admin/suspicious-accounts', async (req, res) => {
     try {
-        const { admin_token, min_flags = 1 } = req.query;
+        const { min_flags = 1 } = req.query;
+        const admin_token = req.headers['x-admin-token'];
         if (!verifyAdminToken(admin_token)) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
@@ -11776,7 +11956,8 @@ app.get('/admin/suspicious-accounts', async (req, res) => {
  */
 app.get('/admin/xp-rate-anomalies', async (req, res) => {
     try {
-        const { admin_token, min_rate = 30000, min_samples = 3 } = req.query;
+        const { min_rate = 30000, min_samples = 3 } = req.query;
+        const admin_token = req.headers['x-admin-token'];
         if (!verifyAdminToken(admin_token)) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
@@ -11841,7 +12022,7 @@ app.get('/admin/xp-rate-anomalies', async (req, res) => {
  */
 app.get('/admin/export-all-users', async (req, res) => {
     try {
-        const { admin_token } = req.query;
+        const admin_token = req.headers['x-admin-token'];
         if (!verifyAdminToken(admin_token)) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
