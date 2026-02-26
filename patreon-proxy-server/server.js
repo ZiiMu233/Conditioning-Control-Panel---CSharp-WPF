@@ -7762,6 +7762,7 @@ app.post('/v2/user/export-data', async (req, res) => {
         // Clone user data and redact sensitive/internal fields
         const exportData = { ...user };
         delete exportData.auth_token_hash;
+        delete exportData.password_hash;
         delete exportData.anti_cheat_flags;
         delete exportData.xp_rate;
         delete exportData.last_heartbeat;
