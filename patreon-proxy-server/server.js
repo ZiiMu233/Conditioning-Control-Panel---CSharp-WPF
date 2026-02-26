@@ -26,6 +26,37 @@ function hashEmail(email) {
     return crypto.createHmac('sha256', EMAIL_HASH_KEY).update(email.toLowerCase()).digest('hex');
 }
 
+/**
+ * Hash a password using scrypt with a random salt.
+ * Returns "salt:hash" string for storage.
+ */
+async function hashPassword(password) {
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = await new Promise((resolve, reject) => {
+        crypto.scrypt(password, salt, 64, (err, key) => {
+            if (err) reject(err);
+            else resolve(key.toString('hex'));
+        });
+    });
+    return `${salt}:${hash}`;
+}
+
+/**
+ * Verify a password against a stored "salt:hash" string.
+ * Uses timing-safe comparison to prevent timing attacks.
+ */
+async function verifyPassword(password, stored) {
+    const [salt, hash] = stored.split(':');
+    if (!salt || !hash) return false;
+    const verify = await new Promise((resolve, reject) => {
+        crypto.scrypt(password, salt, 64, (err, key) => {
+            if (err) reject(err);
+            else resolve(key.toString('hex'));
+        });
+    });
+    return timingSafeCompare(verify, hash);
+}
+
 const app = express();
 
 // Trust Vercel's reverse proxy so req.ip returns the real client IP (not proxy IP)
@@ -172,6 +203,21 @@ function filterProfileForResponse(profile) {
     };
 }
 
+/**
+ * Enforce a Redis-backed cooldown on admin SCAN operations to prevent DoS.
+ * Returns null if allowed, or an error response object if on cooldown.
+ */
+async function enforceAdminScanCooldown(res, operationName) {
+    if (!redis) return null;
+    const cooldownKey = `admin_scan_cooldown:${operationName}`;
+    const onCooldown = await redis.get(cooldownKey);
+    if (onCooldown) {
+        return res.status(429).json({ error: `${operationName} cooldown active. Try again in 30 seconds.`, retry_after: 30 });
+    }
+    await redis.set(cooldownKey, '1', { ex: 30 });
+    return null;
+}
+
 // =============================================================================
 // REQUEST LOGGING MIDDLEWARE
 // =============================================================================
@@ -196,6 +242,8 @@ const AUTH_EXEMPT_PATHS = new Set([
     '/v2/auth/patreon',
     '/v2/auth/discord',
     '/v2/auth/restore-session',
+    '/v2/auth/register',
+    '/v2/auth/login',
     '/discord/validate',
     '/auth/register',
     '/auth/link-provider'
@@ -227,7 +275,7 @@ setInterval(() => {
 app.use(async (req, res, next) => {
     const start = Date.now();
     // Use x-real-ip (set by Vercel) or rightmost x-forwarded-for (appended by proxy, not client-controllable)
-    const ip = req.headers['x-real-ip']?.trim() || req.headers['x-forwarded-for']?.split(',').pop()?.trim() || req.ip || 'unknown';
+    const ip = req.headers['x-real-ip']?.trim() || req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
     const ua = sanitizeForLog((req.headers['user-agent'] || 'none'));
     const unifiedId = sanitizeForLog(req.body?.unified_id || req.query?.unified_id || '-');
     const hasAuthToken = !!req.headers['x-auth-token'];
@@ -241,12 +289,9 @@ app.use(async (req, res, next) => {
         if (redis) {
             try {
                 const authRateKey = `auth_rate:${ip}`;
-                // Atomic increment — returns new count, creates key with value 1 if missing
+                // Ensure key has TTL even if server crashes between INCR and EXPIRE
+                await redis.set(authRateKey, 0, { nx: true, ex: 30 });
                 const authCount = await redis.incr(authRateKey);
-                if (authCount === 1) {
-                    // First request in window — set TTL (key created by incr has no expiry)
-                    await redis.expire(authRateKey, 30);
-                }
                 if (authCount > 10) {
                     return res.status(429).json({ error: 'Too many auth requests. Please wait and try again.', retry_after: 30 });
                 }
@@ -524,11 +569,11 @@ async function checkRateLimit(userId, dailyLimit) {
  */
 async function getRateLimitStatus(userId, dailyLimit) {
     const limit = dailyLimit || RATE_LIMIT.DAILY_REQUESTS;
-    // If Redis not configured, return defaults
+    // If Redis not configured, DENY to match checkRateLimit() behavior
     if (!redis) {
         return {
-            remaining: limit,
-            used: 0,
+            remaining: 0,
+            used: limit,
             limit: limit
         };
     }
@@ -546,9 +591,10 @@ async function getRateLimitStatus(userId, dailyLimit) {
         };
     } catch (error) {
         console.error('Rate limit status check failed:', error.message);
+        // DENY on Redis error to match checkRateLimit() behavior
         return {
-            remaining: limit,
-            used: 0,
+            remaining: 0,
+            used: limit,
             limit: limit
         };
     }
@@ -1589,10 +1635,13 @@ app.post('/discord/community-webhook', async (req, res) => {
         let webhookPayload;
 
         if (type === 'achievement') {
-            const { achievement_name, achievement_requirement, image_name } = req.body;
-            if (!achievement_name) {
+            const { achievement_name: rawAchName, achievement_requirement: rawAchReq, image_name } = req.body;
+            if (!rawAchName) {
                 return res.status(400).json({ error: 'achievement_name is required for achievement type' });
             }
+            // Sanitize to prevent Discord markdown/mention injection (@everyone, @here, etc.)
+            const achievement_name = String(rawAchName).replace(/[@*_~`|<>\\]/g, '');
+            const achievement_requirement = rawAchReq ? String(rawAchReq).replace(/[@*_~`|<>\\]/g, '') : null;
 
             // Bambi themed achievement messages
             const achievementMessages = [
@@ -2572,8 +2621,8 @@ app.post('/auth/register', async (req, res) => {
         }
 
         const trimmedName = display_name.trim();
-        if (trimmedName.length < 2 || trimmedName.length > 20) {
-            return res.status(400).json({ error: 'Display name must be 2-20 characters' });
+        if (trimmedName.length < 3 || trimmedName.length > 20) {
+            return res.status(400).json({ error: 'Display name must be 3-20 characters' });
         }
 
         if (!isValidDisplayNameChars(trimmedName)) {
@@ -2828,6 +2877,17 @@ app.get('/user/profile', async (req, res) => {
             return res.status(401).json({ error: 'Authorization header required' });
         }
 
+        // Per-IP cooldown to prevent Patreon API amplification
+        const profileIp = req.headers['x-real-ip'] || req.ip || 'unknown';
+        if (redis) {
+            const v1ProfileCooldownKey = `v1_profile_cooldown:${profileIp}`;
+            const onCooldown = await redis.get(v1ProfileCooldownKey);
+            if (onCooldown) {
+                return res.status(429).json({ error: 'V1 profile cooldown active', retry_after: 10 });
+            }
+            await redis.set(v1ProfileCooldownKey, '1', { ex: 10 });
+        }
+
         const accessToken = authHeader.substring(7);
         const identity = await getPatreonIdentity(accessToken);
         const tierInfo = determineTier(identity);
@@ -3023,10 +3083,10 @@ app.post('/user/sync', async (req, res) => {
             share_profile_picture: typeof share_profile_picture === 'boolean' ? share_profile_picture : (existing?.share_profile_picture || false),
             // Online status visibility opt-in (default true - visible)
             show_online_status: typeof show_online_status === 'boolean' ? show_online_status : (existing?.show_online_status !== false),
-            // Store Discord ID for DM feature (update if provided, otherwise preserve existing)
-            discord_id: discord_id || existing?.discord_id || null,
-            // Store Discord avatar URL (update if provided, otherwise preserve existing)
-            avatar_url: avatar_url || existing?.avatar_url || null,
+            // Store Discord ID for DM feature (validate numeric, update if provided, otherwise preserve existing)
+            discord_id: (discord_id && /^\d{1,20}$/.test(String(discord_id))) ? String(discord_id) : (existing?.discord_id || null),
+            // Store Discord avatar URL (validate HTTPS, update if provided, otherwise preserve existing)
+            avatar_url: (avatar_url && typeof avatar_url === 'string' && avatar_url.startsWith('https://')) ? avatar_url : (existing?.avatar_url || null),
             // Update Patreon status fields live (checked during sync)
             patreon_tier: effectiveTier,
             patreon_is_active: hasActivePledge,
@@ -3161,6 +3221,17 @@ app.post('/user/set-display-name', async (req, res) => {
             return res.status(401).json({ error: 'Authorization header required' });
         }
 
+        // Per-IP cooldown to prevent Patreon API amplification
+        const setNameIp = req.headers['x-real-ip'] || req.ip || 'unknown';
+        if (redis) {
+            const v1SetNameCooldownKey = `v1_setname_cooldown:${setNameIp}`;
+            const onCooldown = await redis.get(v1SetNameCooldownKey);
+            if (onCooldown) {
+                return res.status(429).json({ error: 'V1 set-display-name cooldown active', retry_after: 30 });
+            }
+            await redis.set(v1SetNameCooldownKey, '1', { ex: 30 });
+        }
+
         const accessToken = authHeader.substring(7);
         const identity = await getPatreonIdentity(accessToken);
         const tierInfo = determineTier(identity);
@@ -3182,8 +3253,8 @@ app.post('/user/set-display-name', async (req, res) => {
         }
 
         const trimmedName = display_name.trim();
-        if (trimmedName.length < 2 || trimmedName.length > 20) {
-            return res.status(400).json({ error: 'Display name must be 2-20 characters' });
+        if (trimmedName.length < 3 || trimmedName.length > 20) {
+            return res.status(400).json({ error: 'Display name must be 3-20 characters' });
         }
 
         // Strict character validation (prevent Redis key injection, log injection)
@@ -3250,6 +3321,17 @@ app.get('/user/check-display-name', async (req, res) => {
             return res.status(401).json({ error: 'Authorization header required' });
         }
 
+        // Per-IP cooldown to prevent Patreon API amplification
+        const checkNameIp = req.headers['x-real-ip'] || req.ip || 'unknown';
+        if (redis) {
+            const v1CheckNameCooldownKey = `v1_checkname_cooldown:${checkNameIp}`;
+            const onCooldown = await redis.get(v1CheckNameCooldownKey);
+            if (onCooldown) {
+                return res.status(429).json({ error: 'V1 check-display-name cooldown active', retry_after: 5 });
+            }
+            await redis.set(v1CheckNameCooldownKey, '1', { ex: 5 });
+        }
+
         // Validate token (ensures user is authenticated)
         const accessToken = authHeader.substring(7);
         await getPatreonIdentity(accessToken);
@@ -3265,8 +3347,8 @@ app.get('/user/check-display-name', async (req, res) => {
         }
 
         const trimmedName = name.trim().toLowerCase();
-        if (trimmedName.length < 2 || trimmedName.length > 20) {
-            return res.status(400).json({ available: false, error: 'Display name must be 2-20 characters' });
+        if (trimmedName.length < 3 || trimmedName.length > 20) {
+            return res.status(400).json({ available: false, error: 'Display name must be 3-20 characters' });
         }
 
         // Check the display name index (auto-cleans orphans)
@@ -3280,6 +3362,40 @@ app.get('/user/check-display-name', async (req, res) => {
     } catch (error) {
         console.error('Check display name error:', error.message);
         // On error, allow optimistically
+        res.json({ available: true });
+    }
+});
+
+/**
+ * GET /v2/auth/check-name?name=SomeName
+ * Lightweight name availability check (no OAuth required).
+ * Used by invite code registration flow.
+ * Rate limited by global IP limiter.
+ */
+app.get('/v2/auth/check-name', async (req, res) => {
+    try {
+        if (!redis) {
+            return res.json({ available: true });
+        }
+
+        const { name } = req.query;
+        if (!name || typeof name !== 'string') {
+            return res.status(400).json({ available: false });
+        }
+
+        const trimmedName = name.trim();
+        if (trimmedName.length < 3 || trimmedName.length > 20) {
+            return res.status(400).json({ available: false });
+        }
+
+        if (!isValidDisplayNameChars(trimmedName)) {
+            return res.status(400).json({ available: false });
+        }
+
+        const owner = await isDisplayNameTaken(trimmedName);
+        res.json({ available: !owner });
+    } catch (error) {
+        console.error('Check name error:', error.message);
         res.json({ available: true });
     }
 });
@@ -3319,8 +3435,8 @@ app.post('/user/set-display-name-discord', async (req, res) => {
         }
 
         const trimmedName = display_name.trim();
-        if (trimmedName.length < 2 || trimmedName.length > 20) {
-            return res.status(400).json({ error: 'Display name must be 2-20 characters' });
+        if (trimmedName.length < 3 || trimmedName.length > 20) {
+            return res.status(400).json({ error: 'Display name must be 3-20 characters' });
         }
 
         // Strict character validation (prevent Redis key injection, log injection)
@@ -3403,8 +3519,8 @@ app.get('/user/check-display-name-discord', async (req, res) => {
         }
 
         const trimmedName = name.trim().toLowerCase();
-        if (trimmedName.length < 2 || trimmedName.length > 20) {
-            return res.status(400).json({ available: false, error: 'Display name must be 2-20 characters' });
+        if (trimmedName.length < 3 || trimmedName.length > 20) {
+            return res.status(400).json({ available: false, error: 'Display name must be 3-20 characters' });
         }
 
         // Check the display name index (shared with Patreon users, auto-cleans orphans)
@@ -3980,14 +4096,14 @@ app.get('/user/lookup', async (req, res) => {
             return res.status(503).json({ error: 'Service not available' });
         }
 
-        // Per-IP cooldown (2s) to prevent mass enumeration
+        // Per-IP cooldown (5s) to prevent mass enumeration
         const lookupIp = req.headers['x-real-ip'] || req.ip || 'unknown';
         const lookupCooldownKey = `lookup_cooldown:${lookupIp}`;
         const onCooldown = await redis.get(lookupCooldownKey);
         if (onCooldown) {
-            return res.status(429).json({ error: 'Lookup cooldown active', retry_after: 2 });
+            return res.status(429).json({ error: 'Lookup cooldown active', retry_after: 5 });
         }
-        await redis.set(lookupCooldownKey, '1', { ex: 2 });
+        await redis.set(lookupCooldownKey, '1', { ex: 5 });
 
         const displayName = req.query.display_name;
         if (!displayName) {
@@ -4650,8 +4766,8 @@ app.post('/admin/fix-display-name', async (req, res) => {
         }
 
         const trimmedName = new_display_name.trim();
-        if (trimmedName.length < 2 || trimmedName.length > 20) {
-            return res.status(400).json({ error: 'Display name must be 2-20 characters' });
+        if (trimmedName.length < 3 || trimmedName.length > 20) {
+            return res.status(400).json({ error: 'Display name must be 3-20 characters' });
         }
 
         // Check if new display_name is already taken by someone else
@@ -5176,6 +5292,8 @@ app.get('/admin/scan-unified-users', async (req, res) => {
             return res.status(403).json({ error: 'Unauthorized' });
         }
         if (!redis) return res.status(503).json({ error: 'Redis not available' });
+        const scanBlock = await enforceAdminScanCooldown(res, 'scan-unified-users');
+        if (scanBlock) return;
 
         const brokenUsers = [];
         const allUsers = [];
@@ -5223,6 +5341,8 @@ app.post('/admin/fix-migrated-users', async (req, res) => {
             return res.status(403).json({ error: 'Unauthorized' });
         }
         if (!redis) return res.status(503).json({ error: 'Redis not available' });
+        const scanBlock2 = await enforceAdminScanCooldown(res, 'fix-migrated-users');
+        if (scanBlock2) return;
 
         const currentSeason = getCurrentSeason();
         const fixes = { missing_season: [], missing_discord_index: [], missing_leaderboard: [] };
@@ -5436,6 +5556,10 @@ app.post('/admin/update-key', async (req, res) => {
         }
         if (!key || !field) return res.status(400).json({ error: 'key and field required' });
         if (!isAllowedKeyPrefix(key)) return res.status(400).json({ error: 'Key prefix not allowed' });
+        // Prevent prototype pollution via field name
+        if (field === '__proto__' || field === 'constructor' || field === 'prototype') {
+            return res.status(400).json({ error: 'Invalid field name' });
+        }
         if (!redis) return res.status(503).json({ error: 'Redis not available' });
 
         let data = await redis.get(key);
@@ -5472,6 +5596,12 @@ app.post('/admin/set-key', async (req, res) => {
         }
         if (!key || !data) return res.status(400).json({ error: 'key and data required' });
         if (!isAllowedKeyPrefix(key)) return res.status(400).json({ error: 'Key prefix not allowed' });
+        // Prevent prototype pollution via data keys
+        if (typeof data === 'object' && data !== null) {
+            if ('__proto__' in data || 'constructor' in data || 'prototype' in data) {
+                return res.status(400).json({ error: 'Invalid data: forbidden property names' });
+            }
+        }
         if (!redis) return res.status(503).json({ error: 'Redis not available' });
 
         const existing = await redis.get(key);
@@ -6006,32 +6136,41 @@ app.post('/v2/auth/discord', async (req, res) => {
 
         // Fallback: if index is missing, scan user:* keys to find orphaned account
         // This prevents data loss when discord_index key is accidentally deleted
+        // Wrapped in 3s timeout to match Patreon equivalent and prevent unbounded scan
         if (!existingUnifiedId) {
             console.log(`[V2] discord_index missing for ${discordId}, scanning for orphaned account...`);
-            let cursor = 0;
-            let found = false;
-            do {
-                const result = await redis.scan(cursor, { match: 'user:*', count: 100 });
-                cursor = result[0];
-                for (const key of result[1]) {
-                    try {
-                        const userData = await redis.get(key);
-                        if (!userData) continue;
-                        const user = typeof userData === 'string' ? JSON.parse(userData) : userData;
-                        if (user.discord_id === discordId) {
-                            existingUnifiedId = user.unified_id || key.replace('user:', '');
-                            // Repair the missing index so future lookups are fast
-                            await redis.set(indexKey, existingUnifiedId);
-                            console.log(`[V2] RECOVERED orphaned account for discord ${discordId}: ${existingUnifiedId} (${user.display_name}). Repaired discord_index.`);
-                            found = true;
-                            break;
-                        }
-                    } catch (e) {
-                        // Skip malformed records
-                    }
+            try {
+                const scanResult = await Promise.race([
+                    (async () => {
+                        let cursor = 0;
+                        do {
+                            const result = await redis.scan(cursor, { match: 'user:*', count: 100 });
+                            cursor = result[0];
+                            for (const key of result[1]) {
+                                try {
+                                    const userData = await redis.get(key);
+                                    if (!userData) continue;
+                                    const user = typeof userData === 'string' ? JSON.parse(userData) : userData;
+                                    if (user.discord_id === discordId) {
+                                        return user.unified_id || key.replace('user:', '');
+                                    }
+                                } catch (e) {
+                                    // Skip malformed records
+                                }
+                            }
+                        } while (cursor !== 0);
+                        return null;
+                    })(),
+                    new Promise(resolve => setTimeout(() => resolve(null), 3000))
+                ]);
+                if (scanResult) {
+                    existingUnifiedId = scanResult;
+                    await redis.set(indexKey, existingUnifiedId);
+                    console.log(`[V2] RECOVERED orphaned account for discord ${discordId}: ${existingUnifiedId}. Repaired discord_index.`);
                 }
-                if (found) break;
-            } while (cursor !== 0);
+            } catch (scanErr) {
+                console.error('[V2] Discord orphan scan error:', scanErr.message);
+            }
         }
 
         // Email-based auto-link HINT: if user not found by discord_id, check if their Discord email
@@ -6156,9 +6295,10 @@ app.post('/v2/auth/discord', async (req, res) => {
         // This ONLY runs for whitelisted/OG users reclaiming their account - not for regular users
         // This protects existing users from accidental data loss
         const staleUnifiedId = await redis.get(indexKey);
-        const isOgUserReclaiming = legacyData && (legacyData.is_whitelisted_og || legacyData.highest_level_ever > 0);
+        // Restrict reclaim to whitelisted OG users only (not any user with highest_level_ever > 0)
+        const isOgUserReclaiming = legacyData && legacyData.is_whitelisted_og;
         if (staleUnifiedId && isOgUserReclaiming) {
-            console.log(`[V2] OG user reclaiming account - cleaning up old data for discord_id ${discordId} (unified_id: ${staleUnifiedId})`);
+            console.log(`[V2] Whitelisted OG user reclaiming account - cleaning up old data for discord_id ${discordId} (unified_id: ${staleUnifiedId})`);
 
             // Get old user data to find their display_name
             const oldUserData = await redis.get(`user:${staleUnifiedId}`);
@@ -6604,9 +6744,10 @@ app.post('/v2/auth/patreon', async (req, res) => {
         // This ONLY runs for whitelisted/OG users reclaiming their account - not for regular users
         // This protects existing users from accidental data loss
         const staleUnifiedId = await redis.get(indexKey);
-        const isOgUserReclaiming = legacyData && (legacyData.is_whitelisted_og || legacyData.highest_level_ever > 0);
+        // Restrict reclaim to whitelisted OG users only (not any user with highest_level_ever > 0)
+        const isOgUserReclaiming = legacyData && legacyData.is_whitelisted_og;
         if (staleUnifiedId && isOgUserReclaiming) {
-            console.log(`[V2] OG user reclaiming account - cleaning up old data for patreon_id ${patreonId} (unified_id: ${staleUnifiedId})`);
+            console.log(`[V2] Whitelisted OG user reclaiming account - cleaning up old data for patreon_id ${patreonId} (unified_id: ${staleUnifiedId})`);
 
             // Get old user data to find their display_name
             const oldUserData = await redis.get(`user:${staleUnifiedId}`);
@@ -6662,7 +6803,8 @@ app.post('/v2/auth/patreon', async (req, res) => {
                 // Name exists - check if this is a whitelisted OG user who can reclaim
                 // Whitelisted users can claim ANY taken name (whitelist = proof of OG status)
                 // This handles the case where profile:* keys were deleted so legacyData.display_name is null
-                const canReclaimAsOg = isOgUserReclaiming || whitelistedForLegacy;
+                // Only whitelisted users can reclaim names (not just any user with highest_level_ever > 0)
+                const canReclaimAsOg = whitelistedForLegacy;
 
                 if (canReclaimAsOg) {
                     // OG/whitelisted user wants this name — rename the existing user instead of deleting
@@ -6803,6 +6945,324 @@ app.post('/v2/auth/patreon', async (req, res) => {
         if (error.message === 'UNAUTHORIZED') {
             return res.status(401).json({ error: 'Patreon token expired or invalid' });
         }
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+/**
+ * POST /v2/auth/register
+ * Register a new account with invite code + display name + password.
+ * Body: { invite_code: string, display_name: string, password: string }
+ */
+app.post('/v2/auth/register', async (req, res) => {
+    try {
+        const { invite_code, display_name, password } = req.body;
+
+        // typeof checks on all fields (audit S8)
+        if (typeof invite_code !== 'string' || typeof display_name !== 'string' || typeof password !== 'string') {
+            return res.status(400).json({ error: 'invite_code, display_name, and password required' });
+        }
+        if (!invite_code || !display_name || !password) {
+            return res.status(400).json({ error: 'invite_code, display_name, and password required' });
+        }
+        if (!redis) return res.status(503).json({ error: 'Redis not available' });
+
+        // Validate password
+        if (password.length < 8) {
+            return res.status(400).json({ error: 'Password must be at least 8 characters' });
+        }
+        if (password.length > 128) {
+            return res.status(400).json({ error: 'Password too long' });
+        }
+
+        // Rate limit: 3 registrations per hour per IP (atomic init — audit S4, S6/M15)
+        const ip = req.ip || 'unknown';
+        const regLimitKey = `register_limit:${ip}`;
+        try {
+            await redis.set(regLimitKey, 0, { nx: true, ex: 3600 });
+            const regCount = await redis.incr(regLimitKey);
+            if (regCount > 3) {
+                return res.status(429).json({ error: 'Too many registration attempts. Try again later.' });
+            }
+        } catch (e) {
+            // Redis error — deny (fail-closed)
+            return res.status(429).json({ error: 'Rate limit check failed. Try again later.' });
+        }
+
+        // Validate invite code
+        const normalizedCode = invite_code.toUpperCase().trim();
+        const codeKey = `invite_code:${normalizedCode}`;
+        const codeData = await redis.get(codeKey);
+        if (!codeData) {
+            return res.status(400).json({ error: 'Invalid or expired invite code' });
+        }
+        const code = typeof codeData === 'string' ? JSON.parse(codeData) : codeData;
+        if (code.used) {
+            return res.status(400).json({ error: 'This invite code has already been used' });
+        }
+        if (code.expires_at && new Date(code.expires_at) < new Date()) {
+            return res.status(400).json({ error: 'Invalid or expired invite code' });
+        }
+
+        // Acquire atomic lock on invite code to prevent TOCTOU race condition
+        // (two concurrent requests both passing code.used check before either marks it used)
+        const codeLockKey = `invite_code_lock:${normalizedCode}`;
+        const codeLockAcquired = await redis.set(codeLockKey, '1', { nx: true, ex: 15 });
+        if (!codeLockAcquired) {
+            return res.status(409).json({ error: 'Invite code registration in progress. Please try again.' });
+        }
+
+        // Validate display name
+        const trimmedName = display_name.trim();
+        if (!trimmedName || trimmedName.length < 3 || trimmedName.length > 20) {
+            return res.status(400).json({ error: 'Display name must be 3-20 characters' });
+        }
+        if (!isValidDisplayNameChars(trimmedName)) {
+            return res.status(400).json({ error: 'Display name contains invalid characters' });
+        }
+
+        // Check display name uniqueness with lock
+        const nameIndexKey = `display_name_index:${trimmedName.toLowerCase()}`;
+        const nameLockKey = `name_lock:${trimmedName.toLowerCase()}`;
+        const nameLockAcquired = await redis.set(nameLockKey, '1', { nx: true, ex: 10 });
+        if (!nameLockAcquired) {
+            return res.status(409).json({ error: 'display_name is being registered by another user' });
+        }
+
+        try {
+            const existingNameUser = await redis.get(nameIndexKey);
+            if (existingNameUser) {
+                // Verify the index points to a real user
+                const existingUserData = await redis.get(`user:${existingNameUser}`);
+                if (existingUserData) {
+                    return res.status(409).json({ error: 'display_name already taken' });
+                } else {
+                    // Orphaned index — clean up
+                    await redis.del(nameIndexKey);
+                }
+            }
+
+            // Hash password
+            const passwordHash = await hashPassword(password);
+
+            // Create user
+            const unifiedId = generateUnifiedId();
+            const currentSeason = getCurrentSeason();
+
+            const newUser = {
+                unified_id: unifiedId,
+                display_name: trimmedName,
+                patreon_id: null,
+                discord_id: null,
+                password_hash: passwordHash,
+                auth_method: 'invite',
+
+                current_season: currentSeason,
+                xp: 0,
+                level: 1,
+
+                highest_level_ever: 0,
+                unlocks: calculateUnlocks(0),
+                achievements: [],
+                all_time_stats: {
+                    total_flashes: 0,
+                    total_bubbles_popped: 0,
+                    total_video_minutes: 0,
+                    total_lock_cards_completed: 0,
+                    seasons_completed: 0
+                },
+
+                is_season0_og: false,
+
+                patreon_tier: 0,
+                patreon_is_active: false,
+                patreon_is_whitelisted: false,
+
+                skill_points: 1,
+                unlocked_skills: [],
+
+                allow_discord_dm: false,
+                show_online_status: true,
+
+                display_name_set_at: new Date().toISOString(),
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                last_seen: new Date().toISOString()
+            };
+
+            // Issue auth token
+            const { token: authToken, hash: authTokenHash } = generateAuthToken();
+            newUser.auth_token_hash = authTokenHash;
+
+            // Save user and indexes
+            await redis.set(`user:${unifiedId}`, JSON.stringify(newUser));
+            await redis.set(nameIndexKey, unifiedId);
+
+            // Mark invite code as used
+            code.used = true;
+            code.used_by = unifiedId;
+            code.used_at = new Date().toISOString();
+            await redis.set(codeKey, JSON.stringify(code));
+
+            // Add to leaderboard
+            await redis.zadd(`leaderboard:${currentSeason}`, { score: 0, member: unifiedId });
+
+            // Check whitelist by display name
+            const whitelisted = isWhitelisted(null, null, trimmedName);
+            if (whitelisted) {
+                newUser.patreon_is_whitelisted = true;
+                await redis.set(`user:${unifiedId}`, JSON.stringify(newUser));
+            }
+
+            console.log(`[V2] Created new invite user: ${unifiedId} (${trimmedName})`);
+
+            res.json({
+                success: true,
+                is_new_user: true,
+                needs_registration: false,
+                auth_token: authToken,
+                user: {
+                    unified_id: newUser.unified_id,
+                    display_name: newUser.display_name,
+                    discord_id: newUser.discord_id,
+                    patreon_id: newUser.patreon_id,
+                    level: newUser.level,
+                    xp: newUser.xp,
+                    current_season: newUser.current_season,
+                    highest_level_ever: newUser.highest_level_ever,
+                    unlocks: newUser.unlocks,
+                    achievements: newUser.achievements,
+                    is_season0_og: newUser.is_season0_og,
+                    patreon_tier: newUser.patreon_tier,
+                    patreon_is_active: newUser.patreon_is_active
+                }
+            });
+        } finally {
+            await redis.del(nameLockKey).catch(() => {});
+            await redis.del(codeLockKey).catch(() => {});
+        }
+    } catch (error) {
+        // Release code lock on any error (codeLockKey may not be defined if error was before lock)
+        if (typeof codeLockKey === 'string') {
+            await redis.del(codeLockKey).catch(() => {});
+        }
+        console.error('V2 invite register error:', error.message);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+/**
+ * POST /v2/auth/login
+ * Login with display name + password.
+ * Body: { display_name: string, password: string }
+ */
+app.post('/v2/auth/login', async (req, res) => {
+    try {
+        const { display_name, password } = req.body;
+
+        // typeof checks (audit S8)
+        if (typeof display_name !== 'string' || typeof password !== 'string') {
+            return res.status(400).json({ error: 'display_name and password required' });
+        }
+        if (!display_name || !password) {
+            return res.status(400).json({ error: 'display_name and password required' });
+        }
+        if (!redis) return res.status(503).json({ error: 'Redis not available' });
+
+        const ip = req.ip || 'unknown';
+
+        // Per-IP rate limit: 5 attempts per 5 min (atomic init — audit S5, S6/M15)
+        const failKey = `login_fail:${ip}`;
+        try {
+            await redis.set(failKey, 0, { nx: true, ex: 300 });
+            const failCount = await redis.incr(failKey);
+            if (failCount > 5) {
+                return res.status(429).json({ error: 'Too many failed login attempts. Try again in 5 minutes.' });
+            }
+        } catch (e) {
+            return res.status(429).json({ error: 'Rate limit check failed. Try again later.' });
+        }
+
+        // Look up user by display name
+        const nameKey = `display_name_index:${display_name.trim().toLowerCase()}`;
+        const unifiedId = await redis.get(nameKey);
+
+        if (!unifiedId) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        // Per-account rate limit: 10 attempts per hour (audit S6 — prevents distributed brute-force)
+        const userFailKey = `login_fail_user:${unifiedId}`;
+        try {
+            const userFailCount = await redis.incr(userFailKey);
+            if (userFailCount === 1) {
+                await redis.expire(userFailKey, 3600);
+            }
+            if (userFailCount > 10) {
+                return res.status(429).json({ error: 'Account temporarily locked. Try again later.' });
+            }
+        } catch (e) {
+            return res.status(429).json({ error: 'Rate limit check failed. Try again later.' });
+        }
+
+        // Load user
+        const userData = await redis.get(`user:${unifiedId}`);
+        if (!userData) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const user = typeof userData === 'string' ? JSON.parse(userData) : userData;
+
+        // Verify password (skip non-password users)
+        if (!user.password_hash) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const passwordValid = await verifyPassword(password, user.password_hash);
+        if (!passwordValid) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        // Login successful — clear fail counters
+        try { await redis.del(failKey); } catch (e) { /* non-critical */ }
+        try { await redis.del(userFailKey); } catch (e) { /* non-critical */ }
+
+        // Rotate auth token
+        const { token: authToken, hash: authTokenHash } = generateAuthToken();
+        user.auth_token_hash = authTokenHash;
+        user.last_seen = new Date().toISOString();
+
+        // Re-check whitelist status
+        const whitelisted = isWhitelisted(null, null, user.display_name);
+        user.patreon_is_whitelisted = whitelisted;
+
+        await redis.set(`user:${unifiedId}`, JSON.stringify(user));
+
+        console.log(`[V2] Password login: ${unifiedId} (${user.display_name})`);
+
+        res.json({
+            success: true,
+            is_new_user: false,
+            needs_registration: false,
+            auth_token: authToken,
+            user: {
+                unified_id: user.unified_id,
+                display_name: user.display_name,
+                discord_id: user.discord_id,
+                patreon_id: user.patreon_id,
+                level: user.level,
+                xp: user.xp,
+                current_season: user.current_season,
+                highest_level_ever: user.highest_level_ever,
+                unlocks: user.unlocks,
+                achievements: user.achievements,
+                is_season0_og: user.is_season0_og,
+                patreon_tier: user.patreon_tier,
+                patreon_is_active: user.patreon_is_active
+            }
+        });
+    } catch (error) {
+        console.error('V2 login error:', error.message);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -6997,6 +7457,12 @@ app.post('/v2/auth/restore-session', async (req, res) => {
                 return res.status(404).json({ success: false, error: 'user_not_found' });
             }
 
+            // Re-validate auth token against fresh data (token may have been rotated by concurrent request)
+            const freshClientHash = crypto.createHash('sha256').update(clientToken).digest('hex');
+            if (!timingSafeCompare(freshClientHash, freshUser.auth_token_hash)) {
+                return res.status(401).json({ success: false, error: 'invalid_auth_token', message: 'Token was rotated by another session. Please log in again.' });
+            }
+
             // Update last_seen + auto-fix missing fields
             freshUser.last_seen = new Date().toISOString();
             if (client_version) {
@@ -7187,6 +7653,8 @@ app.post('/v2/user/delete-account', async (req, res) => {
         if (user.email_hash) {
             await redis.del(`email_index:${user.email_hash}`);
             deleted.push(`email_index:${user.email_hash}`);
+            await redis.del(`email_login_index:${user.email_hash}`);
+            deleted.push(`email_login_index:${user.email_hash}`);
         }
 
         // Remove from ALL leaderboard seasons (not just current)
@@ -7792,8 +8260,8 @@ app.post('/v2/user/change-display-name', async (req, res) => {
         if (!isValidDisplayNameChars(trimmed)) {
             return res.status(400).json({ error: 'Display name contains invalid characters' });
         }
-        if (trimmed.length < 2 || trimmed.length > 20) {
-            return res.status(400).json({ error: 'Display name must be 2-20 characters' });
+        if (trimmed.length < 3 || trimmed.length > 20) {
+            return res.status(400).json({ error: 'Display name must be 3-20 characters' });
         }
 
         const userData = await redis.get(`user:${unified_id}`);
@@ -7886,6 +8354,9 @@ app.post('/v2/user/use-oopsie', async (req, res) => {
         }
         if (!fix_date) {
             return res.status(400).json({ error: 'fix_date required' });
+        }
+        if (typeof fix_date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(fix_date)) {
+            return res.status(400).json({ error: 'fix_date must be in YYYY-MM-DD format' });
         }
         if (!redis) return res.status(503).json({ error: 'Redis not available' });
 
@@ -8001,8 +8472,8 @@ app.get('/v3/leaderboard', async (req, res) => {
         const cacheKey = season;
         const cached = leaderboardV3Cache[cacheKey];
         if (cached && (Date.now() - cached.time) < LEADERBOARD_V3_CACHE_TTL) {
-            // Serve from cache, applying offset/limit
-            const sliced = cached.entries.slice(offset, offset + limit);
+            // Serve from cache, applying offset/limit (clone to avoid mutating cached objects)
+            const sliced = cached.entries.slice(offset, offset + limit).map(e => ({ ...e }));
             // Re-number ranks for the slice
             sliced.forEach((e, i) => { e.rank = offset + i + 1; });
             const onlineCount = cached.entries.filter(e => e.is_online).length;
@@ -8502,6 +8973,8 @@ app.post('/admin/reset-all-levels', async (req, res) => {
             return res.status(403).json({ error: 'Unauthorized' });
         }
         if (!redis) return res.status(503).json({ error: 'Redis not available' });
+        const scanBlock3 = await enforceAdminScanCooldown(res, 'reset-all-levels');
+        if (scanBlock3) return;
 
         const currentSeason = getCurrentSeason();
         const results = [];
@@ -8870,10 +9343,11 @@ app.post('/v2/user/sync', async (req, res) => {
                     continue;
                 }
                 if (key === 'quest_completion_dates') {
-                    // Take the longer array (more completion dates = more progress)
+                    // Take the longer array (more completion dates = more progress), cap at 100 entries
                     const clientDates = Array.isArray(value) ? value : [];
                     const serverDates = Array.isArray(user.stats[key]) ? user.stats[key] : [];
-                    user.stats[key] = clientDates.length >= serverDates.length ? clientDates : serverDates;
+                    const merged = clientDates.length >= serverDates.length ? clientDates : serverDates;
+                    user.stats[key] = merged.slice(-100);
                     continue;
                 }
 
@@ -9551,6 +10025,11 @@ app.post('/config/announcement', async (req, res) => {
             return res.status(403).json({ error: 'Unauthorized' });
         }
 
+        // Validate image_url is HTTPS if provided
+        if (image_url && (typeof image_url !== 'string' || !image_url.startsWith('https://'))) {
+            return res.status(400).json({ error: 'image_url must be an HTTPS URL' });
+        }
+
         const config = {
             enabled: !!enabled,
             id: id || `ann_${Date.now()}`,
@@ -9586,6 +10065,11 @@ app.post('/admin/user-announcement', async (req, res) => {
 
         if (!display_name) {
             return res.status(400).json({ error: 'display_name is required' });
+        }
+
+        // Validate image_url is HTTPS if provided
+        if (image_url && (typeof image_url !== 'string' || !image_url.startsWith('https://'))) {
+            return res.status(400).json({ error: 'image_url must be an HTTPS URL' });
         }
 
         if (!redis) {
@@ -9669,8 +10153,14 @@ app.post('/admin/update-user', async (req, res) => {
 
         // Update display_name (also update index)
         if (updates.new_display_name && updates.new_display_name !== user.display_name) {
+            const newName = String(updates.new_display_name).trim();
+            if (!isValidDisplayNameChars(newName)) {
+                return res.status(400).json({ error: 'new_display_name contains invalid characters' });
+            }
+            if (newName.length < 3 || newName.length > 20) {
+                return res.status(400).json({ error: 'Display name must be 3-20 characters' });
+            }
             const oldName = user.display_name;
-            const newName = updates.new_display_name;
 
             // Remove old index, add new
             await redis.del(`display_name_index:${oldName.toLowerCase()}`);
@@ -9736,6 +10226,8 @@ app.post('/admin/update-user', async (req, res) => {
             if (!user.stats) user.stats = {};
             const statChanges = {};
             for (const [key, val] of Object.entries(updates.stats)) {
+                // Prevent prototype pollution
+                if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
                 statChanges[key] = { from: user.stats[key], to: val };
                 user.stats[key] = val;
             }
@@ -10106,8 +10598,8 @@ async function checkPackDownloadLimit(userId, packId) {
         };
     } catch (error) {
         console.error('Pack rate limit check error:', error.message);
-        // On error, allow download but log it
-        return { allowed: true, remaining: 1, used: 0, error: true };
+        // On Redis error, DENY download (match main rate limiter fail-closed behavior)
+        return { allowed: false, remaining: 0, used: PACK_RATE_LIMIT.DOWNLOADS_PER_DAY, error: true };
     }
 }
 
@@ -11331,6 +11823,10 @@ app.get('/admin/leaderboard-snapshot/:season', async (req, res) => {
         if (!redis) return res.status(503).json({ error: 'Redis not available' });
 
         const season = req.params.season;
+        // Validate season format to prevent arbitrary Redis key lookups
+        if (!/^\d{4}-\d{2}$/.test(season)) {
+            return res.status(400).json({ error: 'Invalid season format. Expected YYYY-MM.' });
+        }
         const snapshotKey = `leaderboard_snapshot:${season}`;
         const data = await redis.get(snapshotKey);
 
@@ -11669,7 +12165,7 @@ app.post('/admin/merge-accounts', async (req, res) => {
         });
     } catch (error) {
         console.error('Admin merge-accounts error:', error.message);
-        res.status(500).json({ error: 'Failed to merge accounts', details: error.message });
+        res.status(500).json({ error: 'Failed to merge accounts' });
     }
 });
 
@@ -12080,6 +12576,8 @@ app.get('/admin/suspicious-accounts', async (req, res) => {
             return res.status(403).json({ error: 'Unauthorized' });
         }
         if (!redis) return res.status(503).json({ error: 'Redis not available' });
+        const scanBlockSusp = await enforceAdminScanCooldown(res, 'suspicious-accounts');
+        if (scanBlockSusp) return;
 
         const minFlagsNum = parseInt(min_flags) || 1;
         const suspicious = [];
@@ -12139,6 +12637,8 @@ app.get('/admin/xp-rate-anomalies', async (req, res) => {
             return res.status(403).json({ error: 'Unauthorized' });
         }
         if (!redis) return res.status(503).json({ error: 'Redis not available' });
+        const scanBlockXp = await enforceAdminScanCooldown(res, 'xp-rate-anomalies');
+        if (scanBlockXp) return;
 
         const minRateNum = parseInt(min_rate) || 30000;
         const minSamplesNum = parseInt(min_samples) || 3;
@@ -12204,6 +12704,8 @@ app.get('/admin/export-all-users', async (req, res) => {
             return res.status(403).json({ error: 'Unauthorized' });
         }
         if (!redis) return res.status(503).json({ error: 'Redis not available' });
+        const scanBlockExport = await enforceAdminScanCooldown(res, 'export-all-users');
+        if (scanBlockExport) return;
 
         // 1. Scan all user:* keys and collect full records
         const users = [];
@@ -12359,6 +12861,101 @@ app.post('/admin/import-all-users', express.json({ limit: '50mb' }), async (req,
     } catch (error) {
         console.error('Admin import-all-users error:', error.message);
         res.status(500).json({ error: 'Failed to import users' });
+    }
+});
+
+// =============================================================================
+// ADMIN: INVITE CODES
+// =============================================================================
+
+/**
+ * POST /admin/invite-codes/generate
+ * Generate single-use invite codes for account registration.
+ * Body: { count?: number (1-20, default 1), expires_hours?: number (default 72) }
+ * Header: X-Admin-Token
+ */
+app.post('/admin/invite-codes/generate', async (req, res) => {
+    try {
+        const admin_token = req.headers['x-admin-token'];
+        if (!verifyAdminToken(admin_token)) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+        if (!redis) return res.status(503).json({ error: 'Redis not available' });
+
+        const count = Math.min(Math.max(parseInt(req.body.count) || 1, 1), 20);
+        const expiresHours = Math.max(parseInt(req.body.expires_hours) || 72, 1);
+
+        const codes = [];
+        const now = new Date();
+        const expiresAt = new Date(now.getTime() + expiresHours * 3600 * 1000);
+        const ttlSeconds = expiresHours * 3600;
+
+        for (let i = 0; i < count; i++) {
+            const code = crypto.randomBytes(5).toString('hex').slice(0, 8).toUpperCase();
+            const codeData = {
+                created_at: now.toISOString(),
+                expires_at: expiresAt.toISOString(),
+                used: false
+            };
+
+            await redis.set(`invite_code:${code}`, JSON.stringify(codeData), { ex: ttlSeconds });
+            codes.push(code);
+        }
+
+        console.log(`[Admin] Generated ${count} invite code(s), expires in ${expiresHours}h`);
+
+        res.json({
+            success: true,
+            codes,
+            expires_at: expiresAt.toISOString(),
+            expires_hours: expiresHours
+        });
+    } catch (error) {
+        console.error('Admin invite-codes generate error:', error.message);
+        res.status(500).json({ error: 'Failed to generate invite codes' });
+    }
+});
+
+/**
+ * GET /admin/invite-codes/list
+ * List all active invite codes with their status.
+ * Header: X-Admin-Token
+ */
+app.get('/admin/invite-codes/list', async (req, res) => {
+    try {
+        const admin_token = req.headers['x-admin-token'];
+        if (!verifyAdminToken(admin_token)) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+        if (!redis) return res.status(503).json({ error: 'Redis not available' });
+
+        const codes = [];
+        let cursor = '0';
+        do {
+            const result = await redis.scan(cursor, { match: 'invite_code:*', count: 100 });
+            cursor = String(result[0]);
+            for (const key of (result[1] || [])) {
+                const data = await redis.get(key);
+                if (data) {
+                    const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+                    const code = key.replace('invite_code:', '');
+                    const expired = parsed.expires_at && new Date(parsed.expires_at) < new Date();
+                    codes.push({
+                        code,
+                        status: parsed.used ? 'used' : (expired ? 'expired' : 'active'),
+                        created_at: parsed.created_at,
+                        expires_at: parsed.expires_at,
+                        used_by: parsed.used_by || null,
+                        used_at: parsed.used_at || null
+                    });
+                }
+            }
+        } while (cursor !== '0');
+
+        res.json({ success: true, count: codes.length, codes });
+    } catch (error) {
+        console.error('Admin invite-codes list error:', error.message);
+        res.status(500).json({ error: 'Failed to list invite codes' });
     }
 });
 
@@ -12661,10 +13258,21 @@ app.post('/v2/remote/status', async (req, res) => {
 // Rate limit tracker for /remote/connect (per-IP, prevents brute-force of 6-char codes)
 const remoteConnectAttempts = new Map();
 const REMOTE_CONNECT_MAX_ATTEMPTS = 5; // per minute
+const REMOTE_CONNECT_MAP_MAX = 5000;
 setInterval(() => {
     const cutoff = Date.now() - 60000;
     for (const [key, entry] of remoteConnectAttempts) {
         if (entry.firstAttempt < cutoff) remoteConnectAttempts.delete(key);
+    }
+    // Hard cap: evict oldest entries if still over limit
+    if (remoteConnectAttempts.size > REMOTE_CONNECT_MAP_MAX) {
+        const excess = remoteConnectAttempts.size - REMOTE_CONNECT_MAP_MAX;
+        let removed = 0;
+        for (const key of remoteConnectAttempts.keys()) {
+            if (removed >= excess) break;
+            remoteConnectAttempts.delete(key);
+            removed++;
+        }
     }
 }, 60000);
 
@@ -12676,7 +13284,7 @@ setInterval(() => {
 app.post('/remote/connect', async (req, res) => {
     try {
         // Per-IP rate limit to prevent brute-force code guessing
-        const ip = req.headers['x-real-ip']?.trim() || req.headers['x-forwarded-for']?.split(',').pop()?.trim() || req.ip || 'unknown';
+        const ip = req.headers['x-real-ip']?.trim() || req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
         const now = Date.now();
         if (!remoteConnectAttempts.has(ip)) {
             remoteConnectAttempts.set(ip, { count: 0, firstAttempt: now });
