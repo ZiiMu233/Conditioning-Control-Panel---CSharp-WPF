@@ -186,6 +186,9 @@ function filterUserForAdmin(user) {
     delete filtered.password_hash;
     delete filtered.auth_token_hash;
     delete filtered.xp_rate;
+    delete filtered.patron_name;
+    delete filtered.email;
+    delete filtered.email_hash;
     return filtered;
 }
 
@@ -243,6 +246,26 @@ const RATE_WINDOW_MS = 60000; // 1 minute window
 const IP_RATE_LIMIT = 50;            // Max requests per IP per minute before blocking
 const IP_AUTH_FAIL_LIMIT = 10;       // Max auth failures per IP per minute before blocking
 const IP_BLOCK_DURATION_MS = 1800000; // Block IP for 30 minutes after exceeding limits
+
+// In-memory fallback for auth-exempt rate limiting when Redis is unavailable
+const authRateFallback = new Map();
+const AUTH_RATE_FALLBACK_MAX = 5000;
+const AUTH_RATE_FALLBACK_WINDOW = 30000; // 30s window (matches Redis TTL)
+const AUTH_RATE_FALLBACK_LIMIT = 10;     // matches Redis limit
+setInterval(() => {
+    const cutoff = Date.now() - AUTH_RATE_FALLBACK_WINDOW * 2;
+    for (const [key, entry] of authRateFallback) {
+        if (entry.firstSeen < cutoff) authRateFallback.delete(key);
+    }
+    if (authRateFallback.size > AUTH_RATE_FALLBACK_MAX) {
+        let removed = 0;
+        for (const key of authRateFallback.keys()) {
+            if (removed >= authRateFallback.size - AUTH_RATE_FALLBACK_MAX) break;
+            authRateFallback.delete(key);
+            removed++;
+        }
+    }
+}, 60000);
 
 // Auth endpoints exempt from global IP rate limiter (have their own per-IP cooldown instead)
 // These are one-shot login/registration operations that shouldn't be collaterally blocked
@@ -305,6 +328,7 @@ app.use(async (req, res, next) => {
     // when sharing IPs with attack traffic (residential botnet / CGNAT / VPN).
     // Limit: 10 auth requests per IP per 30s window (shared across all auth endpoints).
     if (AUTH_EXEMPT_PATHS.has(req.path)) {
+        let redisRateLimited = false;
         if (redis) {
             try {
                 // Check if IP is globally blocked (shared with main rate limiter)
@@ -319,7 +343,24 @@ app.use(async (req, res, next) => {
                 if (authCount > 10) {
                     return res.status(429).json({ error: 'Too many auth requests. Please wait and try again.', retry_after: 30 });
                 }
-            } catch (e) { /* Redis failure = allow through, auth endpoints require valid OAuth tokens */ }
+                redisRateLimited = true;
+            } catch (e) { /* Redis failure = fall through to in-memory fallback below */ }
+        }
+        // In-memory fallback when Redis is unavailable (per-instance, not shared, but better than nothing)
+        if (!redisRateLimited) {
+            const now2 = Date.now();
+            if (!authRateFallback.has(ip)) {
+                authRateFallback.set(ip, { count: 0, firstSeen: now2 });
+            }
+            const entry = authRateFallback.get(ip);
+            if (now2 - entry.firstSeen > AUTH_RATE_FALLBACK_WINDOW) {
+                entry.count = 0;
+                entry.firstSeen = now2;
+            }
+            entry.count++;
+            if (entry.count > AUTH_RATE_FALLBACK_LIMIT) {
+                return res.status(429).json({ error: 'Too many auth requests. Please wait and try again.', retry_after: 30 });
+            }
         }
         // Still log request on finish
         res.on('finish', () => {
@@ -7995,13 +8036,39 @@ app.post('/v2/user/export-data', async (req, res) => {
             console.log(`[AUTH] ${authCheck.missing ? 'Old client (token not sent)' : 'Legacy user (no token hash)'} for ${unified_id} on ${req.path}`);
         }
 
-        // Clone user data and redact sensitive/internal fields
-        const exportData = { ...user };
-        delete exportData.auth_token_hash;
-        delete exportData.password_hash;
-        delete exportData.anti_cheat_flags;
-        delete exportData.xp_rate;
-        delete exportData.last_heartbeat;
+        // Whitelist approach: only include explicitly safe fields for user data export
+        const exportData = {
+            unified_id: user.unified_id,
+            display_name: user.display_name,
+            level: user.level,
+            xp: user.xp,
+            current_season: user.current_season,
+            highest_level_ever: user.highest_level_ever,
+            is_season0_og: user.is_season0_og,
+            patreon_tier: user.patreon_tier,
+            patreon_is_active: user.patreon_is_active,
+            patreon_is_whitelisted: user.patreon_is_whitelisted,
+            patreon_id: user.patreon_id || null,
+            discord_id: user.discord_id || null,
+            discord_username: user.discord_username || null,
+            achievements: user.achievements || [],
+            unlocked_skills: user.unlocked_skills || [],
+            skill_points: user.skill_points || {},
+            stats: user.stats || {},
+            all_time_stats: user.all_time_stats || {},
+            quest_stats: user.quest_stats || {},
+            companion_progress: user.companion_progress || {},
+            total_conditioning_minutes: user.total_conditioning_minutes || 0,
+            avatar_url: user.avatar_url || null,
+            show_online_status: user.show_online_status,
+            allow_discord_dm: user.allow_discord_dm,
+            unlocks: user.unlocks || {},
+            auth_method: user.auth_method || null,
+            display_name_set_at: user.display_name_set_at || null,
+            created_at: user.created_at,
+            updated_at: user.updated_at,
+            last_seen: user.last_seen || null
+        };
 
         // Include cloud settings backup if it exists
         const settingsBackup = await redis.get(`settings_backup:${unified_id}`);
@@ -8705,6 +8772,17 @@ app.get('/v3/leaderboard', async (req, res) => {
     try {
         if (!redis) return res.status(503).json({ error: 'Redis not available' });
 
+        // Per-IP rate limit: 5 leaderboard requests per minute (prevents amplification)
+        const lbIp = req.ip || 'unknown';
+        try {
+            const lbRateKey = `lb_rate:${lbIp}`;
+            await redis.set(lbRateKey, 0, { nx: true, ex: 60 });
+            const lbCount = await redis.incr(lbRateKey);
+            if (lbCount > 5) {
+                return res.status(429).json({ error: 'Too many leaderboard requests. Please wait.' });
+            }
+        } catch (e) { /* Redis failure = allow through, cache will protect */ }
+
         const season = req.query.season || getCurrentSeason();
         // Validate season format to prevent arbitrary Redis key lookups and cache pollution
         if (!/^\d{4}-\d{2}$/.test(season)) {
@@ -8718,7 +8796,7 @@ app.get('/v3/leaderboard', async (req, res) => {
             return res.status(400).json({ error: 'Season out of valid range.' });
         }
         let limit = parseInt(req.query.limit, 10) || 200;
-        limit = Math.max(Math.min(limit, 5000), 1);
+        limit = Math.max(Math.min(limit, 200), 1);
         const offset = parseInt(req.query.offset) || 0;
 
         // Check cache (keyed by season since limit/offset are applied post-fetch)
@@ -12495,7 +12573,6 @@ app.post('/admin/clear-patron-display-names', async (req, res) => {
                     affected.push({
                         unified_id: user.unified_id,
                         display_name: user.display_name,
-                        patron_name: user.patron_name,
                         level: user.level
                     });
 
@@ -13638,6 +13715,19 @@ app.post('/remote/connect', async (req, res) => {
  */
 app.post('/remote/command', async (req, res) => {
     try {
+        // Per-IP rate limit: 30 commands per minute (prevents Redis write amplification)
+        const cmdIp = req.ip || 'unknown';
+        if (redis) {
+            try {
+                const cmdRateKey = `remote_cmd_rate:${cmdIp}`;
+                await redis.set(cmdRateKey, 0, { nx: true, ex: 60 });
+                const cmdCount = await redis.incr(cmdRateKey);
+                if (cmdCount > 30) {
+                    return res.status(429).json({ error: 'Too many commands. Please slow down.' });
+                }
+            } catch (e) { /* Redis failure = allow through, session validation still required */ }
+        }
+
         const { code, controller_id, action, params } = req.body;
         if (!code || !controller_id || !action) {
             return res.status(400).json({ error: 'code, controller_id, and action required' });
@@ -13709,6 +13799,19 @@ app.post('/remote/command', async (req, res) => {
  */
 app.get('/remote/status/:code', async (req, res) => {
     try {
+        // Per-IP rate limit: 20 status polls per minute
+        const statusIp = req.ip || 'unknown';
+        if (redis) {
+            try {
+                const statusRateKey = `remote_status_rate:${statusIp}`;
+                await redis.set(statusRateKey, 0, { nx: true, ex: 60 });
+                const statusCount = await redis.incr(statusRateKey);
+                if (statusCount > 20) {
+                    return res.status(429).json({ error: 'Too many status requests. Please slow down.' });
+                }
+            } catch (e) { /* Redis failure = allow through */ }
+        }
+
         const { code } = req.params;
         const { controller_id } = req.query;
         if (!code || !controller_id) {
@@ -13768,6 +13871,19 @@ app.get('/remote/status/:code', async (req, res) => {
  */
 app.post('/remote/disconnect', async (req, res) => {
     try {
+        // Per-IP rate limit: 10 disconnects per minute
+        const dcIp = req.ip || 'unknown';
+        if (redis) {
+            try {
+                const dcRateKey = `remote_dc_rate:${dcIp}`;
+                await redis.set(dcRateKey, 0, { nx: true, ex: 60 });
+                const dcCount = await redis.incr(dcRateKey);
+                if (dcCount > 10) {
+                    return res.status(429).json({ error: 'Too many requests. Please slow down.' });
+                }
+            } catch (e) { /* Redis failure = allow through */ }
+        }
+
         const { code, controller_id } = req.body;
         if (!code || !controller_id) {
             return res.status(400).json({ error: 'code and controller_id required' });
