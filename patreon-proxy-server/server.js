@@ -1768,6 +1768,18 @@ app.get('/discord/validate', async (req, res) => {
 const COMMUNITY_WEBHOOK_URL = process.env.DISCORD_COMMUNITY_WEBHOOK_URL || '';
 const ACHIEVEMENTS_BASE_URL = 'https://codebambi.github.io/Conditioning-Control-Panel---CSharp-WPF/achievements/';
 
+// Valid achievement names — must match client Achievement.All dictionary
+const VALID_ACHIEVEMENT_NAMES = new Set([
+    'Plastic Initiation', 'Dumb Bimbo', 'Fully Synthetic', 'Docile Cow',
+    'Perfect Plastic Puppet', 'Brainwashed Slavedoll', 'Platinum Puppet',
+    'Rose-Tinted Reality', 'Deep Sleep Mode', 'Daily Maintenance',
+    'Retinal Burn', 'Morning Glory', 'Player 2 Disconnected', 'Sofa Decor',
+    'Look, But Don\'t Touch', 'Spiral Eyes', 'Mathematician\'s Nightmare',
+    'Pop Goes The Thought', 'Typing Tutor', 'Obedience Reflex',
+    'Mercy Beggar', 'Clean Slate', 'Corner Hit', 'Neon Obsession',
+    'Panic Button? What Panic Button?', 'Relapse', 'Total Lockdown', 'System Overload'
+]);
+
 /**
  * POST /discord/community-webhook
  * Posts achievements and level ups to the community Discord webhook
@@ -1828,8 +1840,13 @@ app.post('/discord/community-webhook', async (req, res) => {
             if (!rawAchName) {
                 return res.status(400).json({ error: 'achievement_name is required for achievement type' });
             }
+            // Validate achievement exists in known list
+            const achNameStr = String(rawAchName);
+            if (!VALID_ACHIEVEMENT_NAMES.has(achNameStr)) {
+                return res.status(400).json({ error: 'Invalid achievement name' });
+            }
             // Sanitize to prevent Discord markdown/mention injection (@everyone, @here, etc.)
-            const achievement_name = String(rawAchName).replace(/[@*_~`|<>\\]/g, '');
+            const achievement_name = achNameStr.replace(/[@*_~`|<>\\]/g, '');
             const achievement_requirement = rawAchReq ? String(rawAchReq).replace(/[@*_~`|<>\\]/g, '') : null;
 
             // Bambi themed achievement messages
@@ -1864,6 +1881,11 @@ app.post('/discord/community-webhook', async (req, res) => {
             const { level, image_name } = req.body;
             if (typeof level !== 'number') {
                 return res.status(400).json({ error: 'level is required for level_up type' });
+            }
+            // Validate level against user's actual stored level
+            const userLevel = user.highest_level_ever || user.level || 0;
+            if (level < 1 || level > 999 || level > userLevel) {
+                return res.status(400).json({ error: 'Invalid level' });
             }
 
             // Bambi themed level up messages based on milestone
