@@ -7919,6 +7919,11 @@ app.post('/v2/auth/login', async (req, res) => {
         const whitelisted = isWhitelisted(null, null, user.display_name);
         user.patreon_is_whitelisted = whitelisted;
 
+        // Ensure whitelisted users have at least tier 2
+        if (whitelisted && (!user.patreon_tier || user.patreon_tier < 2)) {
+            user.patreon_tier = 2;
+        }
+
         await redis.set(`user:${unifiedId}`, JSON.stringify(user));
 
         console.log(`[V2] Password login: ${unifiedId}`);
@@ -7941,7 +7946,8 @@ app.post('/v2/auth/login', async (req, res) => {
                 achievements: user.achievements,
                 is_season0_og: user.is_season0_og,
                 patreon_tier: user.patreon_tier,
-                patreon_is_active: user.patreon_is_active
+                patreon_is_active: user.patreon_is_active,
+                patreon_is_whitelisted: user.patreon_is_whitelisted
             }
         });
     } catch (error) {
