@@ -10586,6 +10586,67 @@ app.post('/v2/user/settings-backup', async (req, res) => {
 });
 
 /**
+ * POST /v2/easter-egg
+ * Record a unique easter egg reader and return the total count.
+ * If unified_id provided: validates auth, adds user to Set, returns count.
+ * If unified_id omitted: returns count only (read-only, no auth).
+ * Response: { count: <number> }
+ */
+app.post('/v2/easter-egg', async (req, res) => {
+    try {
+        if (!redis) return res.status(503).json({ error: 'Redis not available' });
+
+        const REDIS_KEY = 'easter_egg_readers';
+        const BASE_COUNT = 57;
+
+        // Per-IP rate limit: 10 per minute
+        const ip = req.ip || 'unknown';
+        const eeRateKey = `easter_egg_rate:${ip}`;
+        try {
+            await redis.set(eeRateKey, 0, { nx: true, ex: 60 });
+            const eeCount = await redis.incr(eeRateKey);
+            if (eeCount > 10) {
+                return res.status(429).json({ error: 'Too many requests. Try again in a minute.' });
+            }
+        } catch (e) {
+            return res.status(429).json({ error: 'Rate limit check failed' });
+        }
+
+        const { unified_id } = req.body || {};
+
+        if (unified_id) {
+            // Authenticated path: validate and record the reader
+            if (!isValidUnifiedId(unified_id)) {
+                return res.status(400).json({ error: 'Invalid unified_id' });
+            }
+
+            const userRaw = await redis.get(`user:${unified_id}`);
+            if (!userRaw) {
+                // Return 401 (not 404) to prevent user enumeration
+                return res.status(401).json({ error: 'Invalid or missing auth token' });
+            }
+
+            const user = typeof userRaw === 'string' ? JSON.parse(userRaw) : userRaw;
+            const authCheck = validateAuthToken(req, user);
+            if (!authCheck.valid) {
+                return res.status(401).json({ error: 'Invalid or missing auth token' });
+            }
+
+            // Add user to the set (idempotent)
+            await redis.sadd(REDIS_KEY, unified_id);
+        }
+
+        // Return total unique readers + base
+        const rawCount = await redis.scard(REDIS_KEY);
+        const actualReaders = (typeof rawCount === 'number' && isFinite(rawCount)) ? rawCount : 0;
+        res.json({ count: actualReaders + BASE_COUNT });
+    } catch (error) {
+        console.error('Easter egg endpoint error:', error.message);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+/**
  * POST /admin/import-patreon-members
  * Import Patreon members from CSV export as Season 0 OG users
  * Body: { admin_token: string, members: Array<{name, email, patreon_id}>, dry_run?: boolean }
