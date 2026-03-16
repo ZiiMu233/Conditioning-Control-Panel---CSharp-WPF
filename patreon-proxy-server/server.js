@@ -10181,6 +10181,8 @@ app.post('/v2/user/sync', async (req, res) => {
         // Merge stats (take HIGHER values, but skip streak stats if force_streak_override is active)
         if (stats && typeof stats === 'object') {
             user.stats = user.stats || {};
+            // Capture BEFORE the loop — the date handler may overwrite this during iteration
+            const originalDailyResetDate = typeof user.stats.daily_completion_reset_date === 'string' ? user.stats.daily_completion_reset_date : '';
             for (const [key, value] of Object.entries(stats)) {
                 // Prevent prototype pollution and reserved JS property shadowing
                 if (key === '__proto__' || key === 'constructor' || key === 'prototype' || key === 'toString' || key === 'valueOf' || key === 'hasOwnProperty' || key === 'isPrototypeOf') continue;
@@ -10207,6 +10209,20 @@ app.post('/v2/user/sync', async (req, res) => {
                     const merged = clientDates.length >= serverDates.length ? clientDates : serverDates;
                     user.stats[key] = merged.slice(-100);
                     continue;
+                }
+
+                // daily_quests_completed_today resets daily — if the reset date changed (new day),
+                // accept the client's value even if lower (the counter was legitimately reset to 0).
+                // Without this, the max-merge keeps the old counter=3 paired with the new date,
+                // causing "all quests completed" to show permanently.
+                if (key === 'daily_quests_completed_today') {
+                    const clientResetDate = typeof stats.daily_completion_reset_date === 'string' ? stats.daily_completion_reset_date : '';
+                    if (clientResetDate && clientResetDate !== originalDailyResetDate) {
+                        // New day: accept client's counter (capped 0-3 for safety)
+                        user.stats[key] = Math.max(0, Math.min(3, Number(value) || 0));
+                        continue;
+                    }
+                    // Same day: fall through to normal max-merge (prevents exploit of resetting counter within same day)
                 }
 
                 const numValue = Number(value) || 0;
