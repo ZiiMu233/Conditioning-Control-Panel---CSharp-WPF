@@ -1,7 +1,7 @@
 <Window x:Class="ConditioningControlPanel.BubbleCountResultWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="How Many Bubbles?"
+        Title="有多少个泡泡？"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -12,10 +12,10 @@
         FontFamily="Comic Sans MS, Segoe UI">
     
     <Grid>
-        <!-- Semi-transparent background -->
+        <!-- 半透明背景 -->
         <Rectangle Fill="#E0000000"/>
         
-        <!-- Content Card -->
+        <!-- 内容卡片 -->
         <Border Background="#FF2D2D3A"
                 CornerRadius="20"
                 Padding="50"
@@ -28,8 +28,8 @@
             </Border.Effect>
             
             <StackPanel>
-                <!-- Title -->
-                <TextBlock Text="🫧 How Many Bubbles? 🫧"
+                <!-- 标题 -->
+                <TextBlock Text="🫧 有多少个泡泡？ 🫧"
                            FontSize="40"
                            FontWeight="Bold"
                            Foreground="#FF69B4"
@@ -40,14 +40,14 @@
                     </TextBlock.Effect>
                 </TextBlock>
                 
-                <!-- Instruction -->
-                <TextBlock Text="Enter the number of bubbles you counted:"
+                <!-- 说明 -->
+                <TextBlock Text="请输入你数到的泡泡数量："
                            FontSize="18"
                            Foreground="#FFB6C1"
                            HorizontalAlignment="Center"
                            Margin="0,0,0,30"/>
                 
-                <!-- Number Input -->
+                <!-- 数字输入框 -->
                 <TextBox x:Name="TxtAnswer"
                          FontSize="48"
                          FontWeight="Bold"
@@ -61,15 +61,15 @@
                          TextAlignment="Center"
                          MaxLength="3"/>
                 
-                <!-- Attempts remaining -->
+                <!-- 剩余尝试次数 -->
                 <TextBlock x:Name="TxtAttempts"
-                           Text="Attempts remaining: 3"
+                           Text="剩余尝试次数：3"
                            FontSize="16"
                            Foreground="#888888"
                            HorizontalAlignment="Center"
                            Margin="0,20,0,0"/>
                 
-                <!-- Feedback -->
+                <!-- 反馈信息 -->
                 <TextBlock x:Name="TxtFeedback"
                            Text=""
                            FontSize="20"
@@ -78,9 +78,9 @@
                            Margin="0,15,0,0"
                            Visibility="Collapsed"/>
                 
-                <!-- Submit Button -->
+                <!-- 提交按钮 -->
                 <Button x:Name="BtnSubmit"
-                        Content="✓ SUBMIT"
+                        Content="✓ 提交"
                         FontSize="24"
                         FontWeight="Bold"
                         Foreground="White"
@@ -108,18 +108,18 @@
                     </Button.Style>
                 </Button>
                 
-                <!-- Strict Mode Indicator -->
+                <!-- 严格模式提示 -->
                 <TextBlock x:Name="TxtStrict"
-                           Text="🔒 STRICT MODE - Must answer correctly"
+                           Text="🔒 严格模式 - 必须回答正确"
                            FontSize="14"
                            Foreground="#FF6B6B"
                            HorizontalAlignment="Center"
                            Margin="0,20,0,0"
                            Visibility="Collapsed"/>
                 
-                <!-- ESC Hint -->
+                <!-- ESC 提示 -->
                 <TextBlock x:Name="TxtEscHint"
-                           Text="Press ESC to skip (won't earn XP)"
+                           Text="按 ESC 跳过（不会获得经验值）"
                            FontSize="12"
                            Foreground="#666666"
                            HorizontalAlignment="Center"
