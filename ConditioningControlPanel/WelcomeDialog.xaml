@@ -1,7 +1,7 @@
 <Window x:Class="ConditioningControlPanel.WelcomeDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Welcome" 
+        Title="欢迎" 
         Height="670" Width="520"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
@@ -18,47 +18,47 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             
-            <!-- Title Bar with Pink Background -->
+            <!-- 粉色标题栏 -->
             <Border Grid.Row="0" Background="#FF69B4" CornerRadius="8" Margin="-10,-10,-10,20" Padding="20,15">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <TextBlock Text="💖" FontSize="28" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                    <TextBlock Text="Conditioning Control Panel" Foreground="White" FontSize="22" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <TextBlock Text="条件控制面板" Foreground="White" FontSize="22" FontWeight="Bold" VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>
             
-            <!-- Welcome Message -->
-            <TextBlock Grid.Row="1" Text="Welcome, Good Girl!" 
+            <!-- 欢迎语 -->
+            <TextBlock Grid.Row="1" Text="欢迎，乖女孩！" 
                        Foreground="#FF69B4" FontSize="26" FontWeight="Bold" 
                        HorizontalAlignment="Center" Margin="0,10,0,20"/>
             
-            <!-- Description -->
+            <!-- 说明内容 -->
             <StackPanel Grid.Row="2" Margin="0,0,0,20">
                 <TextBlock Foreground="#E0E0E0" FontSize="14" TextWrapping="Wrap" LineHeight="24" TextAlignment="Center">
-                    <Run Text="This application is designed to enhance your conditioning experience."/>
+                    <Run Text="此应用程序旨在增强您的条件反射训练体验。"/>
                 </TextBlock>
                 
                 <TextBlock Foreground="#E0E0E0" FontSize="14" TextWrapping="Wrap" LineHeight="24" TextAlignment="Center" Margin="0,15,0,0">
-                    <Run Text="Features unlock as you level up through use. Start the engine and let the conditioning begin!"/>
+                    <Run Text="功能会随着使用和等级提升而解锁。启动引擎，让训练开始吧！"/>
                 </TextBlock>
                 
                 <Border Background="#252542" CornerRadius="8" Padding="15" Margin="0,20,0,0">
                     <StackPanel>
                         <TextBlock Foreground="#FFB347" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center">
-                            <Run Text="💡 Tips"/>
+                            <Run Text="💡 小贴士"/>
                         </TextBlock>
                         <TextBlock Foreground="#FF69B4" FontSize="12" TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,0" FontWeight="SemiBold">
-                            <Run Text="• Click the"/>
+                            <Run Text="• 点击顶部栏的"/>
                             <Run Text=" ? " FontWeight="Bold" Foreground="White" Background="#FF69B4"/>
-                            <Run Text="button in the top bar for a full tutorial"/>
+                            <Run Text="按钮查看完整教程"/>
                         </TextBlock>
                         <TextBlock Foreground="#B0B0B0" FontSize="12" TextWrapping="Wrap" TextAlignment="Center" Margin="0,4,0,0">
-                            <Run Text="• Hover over any setting to see what it does"/>
+                            <Run Text="• 将鼠标悬停在任何设置上可查看其说明"/>
                         </TextBlock>
                         <TextBlock Foreground="#B0B0B0" FontSize="12" TextWrapping="Wrap" TextAlignment="Center" Margin="0,4,0,0">
-                            <Run Text="• Add videos to 'assets/videos' and images to 'assets/images'"/>
+                            <Run Text="• 将视频添加至 'assets/videos'，图片添加至 'assets/images'"/>
                         </TextBlock>
                         <TextBlock Foreground="#B0B0B0" FontSize="12" TextWrapping="Wrap" TextAlignment="Center" Margin="0,4,0,0">
-                            <Run Text="• For gaming: Use 'Borderless Windowed' mode for overlays"/>
+                            <Run Text="• 游戏时：请使用'无边框窗口'模式以启用覆盖层"/>
                         </TextBlock>
                     </StackPanel>
                 </Border>
@@ -66,19 +66,19 @@
                 <Border Background="#252542" CornerRadius="8" Padding="15" Margin="0,20,0,0">
                     <StackPanel>
                         <TextBlock Foreground="#FFB347" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center">
-                            <Run Text="⚠️ Performance Warning"/>
+                            <Run Text="⚠️ 性能提示"/>
                         </TextBlock>
                         <TextBlock Foreground="#FFB347" FontSize="12" TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,0">
-                            <Run Text="Running many features, especially with high frequencies or large media, can be resource-intensive."/>
+                            <Run Text="同时运行多项功能，尤其是高频率或大型媒体文件时，会消耗较多系统资源。"/>
                             <LineBreak/>
-                            <Run Text="If you experience performance issues on low-end PCs, consider reducing active features."/>
+                            <Run Text="若在低配置电脑上遇到性能问题，请考虑减少启用功能的数量。"/>
                         </TextBlock>
                     </StackPanel>
                 </Border>
             </StackPanel>
             
-            <!-- Button -->
-            <Button Grid.Row="3" Content="💜 Let's Begin!" Click="BtnBegin_Click" Cursor="Hand">
+            <!-- 按钮 -->
+            <Button Grid.Row="3" Content="💜 开始吧！" Click="BtnBegin_Click" Cursor="Hand">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Setter Property="Background" Value="{StaticResource PinkBrush}"/>
