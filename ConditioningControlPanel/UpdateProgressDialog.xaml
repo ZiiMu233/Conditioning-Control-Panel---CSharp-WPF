@@ -1,7 +1,10 @@
+以下是汉化后的 `UpdateProgressDialog.xaml` 代码：
+
+```xml
 <Window x:Class="ConditioningControlPanel.UpdateProgressDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Downloading Update"
+        Title="正在下载更新"
         Height="150" Width="400"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
@@ -15,21 +18,22 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Title -->
-        <TextBlock Grid.Row="0" Text="Downloading Update..."
+        <!-- 标题 -->
+        <TextBlock Grid.Row="0" Text="正在下载更新..."
                    Foreground="#FF69B4" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
 
-        <!-- Progress Bar -->
+        <!-- 进度条 -->
         <Border Grid.Row="1" Background="#252542" CornerRadius="4" Height="20" Padding="2">
             <Grid>
                 <Border x:Name="ProgressFill" Background="#FF69B4" CornerRadius="3" HorizontalAlignment="Left" Width="0"/>
             </Grid>
         </Border>
 
-        <!-- Progress Text -->
+        <!-- 进度文本 -->
         <TextBlock x:Name="TxtProgress" Grid.Row="2"
                    Text="0%"
                    Foreground="#E0E0E0" FontSize="13"
                    HorizontalAlignment="Center" Margin="0,10,0,0"/>
     </Grid>
 </Window>
+```
