@@ -1,7 +1,7 @@
 <Window x:Class="ConditioningControlPanel.MantraWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Mantra Lab"
+        Title="真言实验室"
         WindowStyle="None" WindowState="Maximized"
         AllowsTransparency="True"
         Background="Black"
@@ -59,7 +59,7 @@
     </Window.Resources>
 
     <Grid>
-        <!-- Layer 0: Radial gradient base -->
+        <!-- Layer 0: 径向渐变背景层 -->
         <Border>
             <Border.Background>
                 <RadialGradientBrush x:Name="BaseBrush" Center="0.5,0.5" RadiusX="0.7" RadiusY="0.7">
@@ -69,7 +69,7 @@
             </Border.Background>
         </Border>
 
-        <!-- Layer 1: Color wash overlay (intensity tied to streak) -->
+        <!-- Layer 1: 色彩光晕叠加层（强度随连续次数变化） -->
         <Border x:Name="ColorWashOverlay" Opacity="0">
             <Border.Background>
                 <RadialGradientBrush Center="0.5,0.5" RadiusX="0.6" RadiusY="0.6">
@@ -79,7 +79,7 @@
             </Border.Background>
         </Border>
 
-        <!-- Layer 2: Glow overlay (pulsing) -->
+        <!-- Layer 2: 脉冲光晕层 -->
         <Border x:Name="GlowOverlay" Opacity="0">
             <Border.Background>
                 <RadialGradientBrush Center="0.5,0.6" RadiusX="0.4" RadiusY="0.4">
@@ -89,7 +89,7 @@
             </Border.Background>
         </Border>
 
-        <!-- Layer 3: Vignette -->
+        <!-- Layer 3: 暗角效果层 -->
         <Border>
             <Border.Background>
                 <RadialGradientBrush Center="0.5,0.5" RadiusX="0.8" RadiusY="0.8">
@@ -99,7 +99,7 @@
             </Border.Background>
         </Border>
 
-        <!-- Content Grid -->
+        <!-- 主要内容网格 -->
         <Grid Margin="40">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -107,26 +107,26 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Top: Counters -->
+            <!-- 顶部：计数区域 -->
             <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
                 <StackPanel Margin="30,0">
-                    <TextBlock Text="REPS" Foreground="#606080" FontSize="11" HorizontalAlignment="Center" FontWeight="Bold"/>
+                    <TextBlock Text="次数" Foreground="#606080" FontSize="11" HorizontalAlignment="Center" FontWeight="Bold"/>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <TextBlock x:Name="TxtCompletions" Text="0" Foreground="White" FontSize="36" FontWeight="Bold"/>
                         <TextBlock x:Name="TxtTarget" Text="/10" Foreground="#606080" FontSize="24" VerticalAlignment="Bottom" Margin="2,0,0,4"/>
                     </StackPanel>
                 </StackPanel>
                 <StackPanel Margin="30,0">
-                    <TextBlock Text="STREAK" Foreground="#606080" FontSize="11" HorizontalAlignment="Center" FontWeight="Bold"/>
+                    <TextBlock Text="连续" Foreground="#606080" FontSize="11" HorizontalAlignment="Center" FontWeight="Bold"/>
                     <TextBlock x:Name="TxtStreak" Text="0" Foreground="#FF69B4" FontSize="36" FontWeight="Bold" HorizontalAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Margin="30,0">
-                    <TextBlock Text="BEST" Foreground="#606080" FontSize="11" HorizontalAlignment="Center" FontWeight="Bold"/>
+                    <TextBlock Text="最佳" Foreground="#606080" FontSize="11" HorizontalAlignment="Center" FontWeight="Bold"/>
                     <TextBlock x:Name="TxtBestStreak" Text="0" Foreground="#9B59B6" FontSize="36" FontWeight="Bold" HorizontalAlignment="Center"/>
                 </StackPanel>
             </StackPanel>
 
-            <!-- Center: Mantra text (Inlines populated in code-behind) -->
+            <!-- 中央：真言文本（内联内容由后台代码填充） -->
             <Viewbox Grid.Row="1" MaxWidth="1400" MaxHeight="300" VerticalAlignment="Center" HorizontalAlignment="Center">
                 <TextBlock x:Name="TxtMantra"
                            FontSize="72" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap"
@@ -146,7 +146,7 @@
                 </TextBlock>
             </Viewbox>
 
-            <!-- Bottom: Input area -->
+            <!-- 底部：输入区域 -->
             <Border Grid.Row="2" Background="#20FFFFFF" CornerRadius="12" Padding="20,14"
                     HorizontalAlignment="Center" MaxWidth="800" MinWidth="500" Margin="0,0,0,40">
                 <Border.BorderBrush>
@@ -166,16 +166,16 @@
                              VerticalAlignment="Center"
                              TextChanged="TxtInput_TextChanged"
                              PreviewKeyDown="TxtInput_PreviewKeyDown"/>
-                    <TextBlock Grid.Column="1" Text="ESC to exit" Foreground="#404060" FontSize="11"
+                    <TextBlock Grid.Column="1" Text="按 ESC 退出" Foreground="#404060" FontSize="11"
                                VerticalAlignment="Center" Margin="10,0,0,0"/>
                 </Grid>
             </Border>
         </Grid>
 
-        <!-- Session complete overlay -->
+        <!-- 完成会话覆盖层 -->
         <Border x:Name="CompletionOverlay" Background="#E0000000" Visibility="Collapsed">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <TextBlock Text="SESSION COMPLETE" Foreground="#FF69B4" FontSize="48" FontWeight="Bold"
+                <TextBlock Text="本次练习完成" Foreground="#FF69B4" FontSize="48" FontWeight="Bold"
                            HorizontalAlignment="Center">
                     <TextBlock.Effect>
                         <DropShadowEffect Color="#FF69B4" BlurRadius="30" ShadowDepth="0" Opacity="0.8"/>
@@ -183,7 +183,7 @@
                 </TextBlock>
                 <TextBlock x:Name="TxtCompletionStats" Text="" Foreground="#9B59B6" FontSize="22"
                            HorizontalAlignment="Center" Margin="0,16,0,0"/>
-                <TextBlock Text="Press any key to close" Foreground="#606080" FontSize="14"
+                <TextBlock Text="按任意键关闭" Foreground="#606080" FontSize="14"
                            HorizontalAlignment="Center" Margin="0,24,0,0"/>
             </StackPanel>
         </Border>
