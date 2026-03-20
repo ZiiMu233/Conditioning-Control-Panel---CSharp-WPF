@@ -7,24 +7,24 @@
             Padding="15">
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>  <!-- Header -->
-                <RowDefinition Height="Auto"/>  <!-- Minute -->
-                <RowDefinition Height="*"/>     <!-- Settings -->
-                <RowDefinition Height="Auto"/>  <!-- Buttons -->
+                <RowDefinition Height="Auto"/>  <!-- 头部区域 -->
+                <RowDefinition Height="Auto"/>  <!-- 分钟设置区域 -->
+                <RowDefinition Height="*"/>     <!-- 动态设置区域 -->
+                <RowDefinition Height="Auto"/>  <!-- 按钮区域 -->
             </Grid.RowDefinitions>
 
-            <!-- Header -->
+            <!-- 头部 -->
             <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
                 <TextBlock x:Name="TxtIcon" Text="⚡" FontSize="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <StackPanel>
-                    <TextBlock x:Name="TxtFeatureName" Text="Feature Name"
+                    <TextBlock x:Name="TxtFeatureName" Text="功能名称"
                                Foreground="#FF69B4" FontSize="16" FontWeight="SemiBold"/>
-                    <TextBlock x:Name="TxtEventType" Text="Start Event"
+                    <TextBlock x:Name="TxtEventType" Text="开始事件"
                                Foreground="#888" FontSize="11"/>
                 </StackPanel>
             </StackPanel>
 
-            <!-- Minute Position -->
+            <!-- 分钟位置 -->
             <Grid Grid.Row="1" Margin="0,0,0,15">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="80"/>
@@ -32,7 +32,7 @@
                     <ColumnDefinition Width="50"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Text="Minute" Foreground="#B0B0B0" FontSize="12" VerticalAlignment="Center"/>
+                <TextBlock Text="分钟" Foreground="#B0B0B0" FontSize="12" VerticalAlignment="Center"/>
                 <Slider x:Name="SliderMinute" Grid.Column="1"
                         Minimum="0" Maximum="120" Value="0"
                         ValueChanged="SliderMinute_ValueChanged"/>
@@ -41,14 +41,14 @@
                            VerticalAlignment="Center" HorizontalAlignment="Right"/>
             </Grid>
 
-            <!-- Dynamic Settings -->
+            <!-- 动态设置区域 -->
             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" MaxHeight="300">
                 <StackPanel x:Name="SettingsPanel">
-                    <!-- Settings will be generated dynamically -->
+                    <!-- 设置项将动态生成 -->
                 </StackPanel>
             </ScrollViewer>
 
-            <!-- Buttons -->
+            <!-- 按钮区域 -->
             <Grid Grid.Row="3" Margin="0,15,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -56,7 +56,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Button x:Name="BtnDelete" Content="Delete" Click="BtnDelete_Click"
+                <Button x:Name="BtnDelete" Content="删除" Click="BtnDelete_Click"
                         Background="#F44336" Foreground="White" Padding="15,8"
                         Cursor="Hand">
                     <Button.Template>
@@ -74,7 +74,7 @@
                     </Button.Template>
                 </Button>
 
-                <Button Grid.Column="2" x:Name="BtnDone" Content="Done" Click="BtnDone_Click"
+                <Button Grid.Column="2" x:Name="BtnDone" Content="完成" Click="BtnDone_Click"
                         Background="#FF69B4" Foreground="White" Padding="20,8"
                         FontWeight="SemiBold" Cursor="Hand">
                     <Button.Template>
