@@ -1,7 +1,7 @@
 <Window x:Class="ConditioningControlPanel.KnowledgeLinkEditorDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Add Knowledge Link"
+        Title="添加知识链接"
         Width="450" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         Background="#1A1A2E"
@@ -23,27 +23,27 @@
                      BorderBrush="#404060" Padding="8" FontSize="12"/>
         </StackPanel>
 
-        <!-- Title -->
+        <!-- 标题 -->
         <StackPanel Grid.Row="1" Margin="0,0,0,15">
-            <TextBlock Text="Title" Foreground="#FF69B4" FontWeight="Bold" Margin="0,0,0,5"/>
+            <TextBlock Text="标题" Foreground="#FF69B4" FontWeight="Bold" Margin="0,0,0,5"/>
             <TextBox x:Name="TxtTitle" Background="#252542" Foreground="White"
                      BorderBrush="#404060" Padding="8" FontSize="12"/>
         </StackPanel>
 
-        <!-- Description -->
+        <!-- 描述 -->
         <StackPanel Grid.Row="2" Margin="0,0,0,15">
-            <TextBlock Text="Description (optional)" Foreground="#FF69B4" FontWeight="Bold" Margin="0,0,0,5"/>
+            <TextBlock Text="描述（可选）" Foreground="#FF69B4" FontWeight="Bold" Margin="0,0,0,5"/>
             <TextBox x:Name="TxtDescription" Background="#252542" Foreground="White"
                      BorderBrush="#404060" Padding="8" FontSize="12"
                      Height="60" TextWrapping="Wrap" AcceptsReturn="True"/>
         </StackPanel>
 
-        <!-- Buttons -->
+        <!-- 按钮 -->
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="Cancel" Width="80" Margin="0,0,10,0"
+            <Button Content="取消" Width="80" Margin="0,0,10,0"
                     Background="#404060" Foreground="White" BorderThickness="0"
                     Padding="8" Cursor="Hand" Click="BtnCancel_Click"/>
-            <Button Content="Add" Width="80"
+            <Button Content="添加" Width="80"
                     Background="#FF69B4" Foreground="White" BorderThickness="0"
                     Padding="8" Cursor="Hand" Click="BtnAdd_Click"/>
         </StackPanel>
