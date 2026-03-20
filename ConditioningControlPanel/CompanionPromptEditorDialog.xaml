@@ -2,14 +2,14 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:ConditioningControlPanel"
-        Title="Customize AI Companion"
+        Title="自定义 AI 伴侣"
         Width="700" Height="750"
         WindowStartupLocation="CenterOwner"
         Background="#1A1A2E"
         ResizeMode="CanResizeWithGrip">
 
     <Window.Resources>
-        <!-- Converter for hiding empty descriptions -->
+        <!-- 隐藏空描述的转换器 -->
         <local:NullOrEmptyToCollapsedConverter x:Key="NullToCollapsedConverter"/>
 
         <Style x:Key="SectionHeader" TargetType="TextBlock">
@@ -70,55 +70,54 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
+        <!-- 头部 -->
         <Border Grid.Row="0" Background="#252542" Padding="20,15">
             <StackPanel>
                 <Grid>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Customize Your AI Companion"
+                        <TextBlock Text="自定义您的 AI 伴侣"
                                    Foreground="{StaticResource PinkBrush}"
                                    FontSize="20" FontWeight="Bold"/>
                         <Border Background="#FF6B6B" CornerRadius="3" Padding="6,2" Margin="10,0,0,0" VerticalAlignment="Center">
-                            <TextBlock Text="BETA" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                            <TextBlock Text="测试版" Foreground="White" FontSize="10" FontWeight="Bold"/>
                         </Border>
                     </StackPanel>
-                    <!-- Active Prompt Badge -->
+                    <!-- 激活提示标记 -->
                     <Border x:Name="ActivePromptBadge" HorizontalAlignment="Right" VerticalAlignment="Center"
                             Background="#1A1A2E" CornerRadius="12" Padding="12,6">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Active:" Foreground="#707070" FontSize="11" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="TxtActivePromptName" Text="Default" Foreground="#9370DB"
+                            <TextBlock Text="当前激活：" Foreground="#707070" FontSize="11" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="TxtActivePromptName" Text="默认" Foreground="#9370DB"
                                        FontSize="11" FontWeight="SemiBold" Margin="5,0,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
                 </Grid>
-                <TextBlock Text="Edit the prompts that control how your companion thinks and responds. Changes are saved automatically when you close this window."
+                <TextBlock Text="编辑控制伴侣思维和回应的提示词。关闭窗口时更改会自动保存。"
                            Foreground="#808080" FontSize="12" TextWrapping="Wrap" Margin="0,5,0,0"/>
 
                 <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                    <CheckBox x:Name="ChkUseCustom" Content="Enable Custom Prompts"
+                    <CheckBox x:Name="ChkUseCustom" Content="启用自定义提示词"
                               Foreground="White" VerticalContentAlignment="Center"
                               Checked="ChkUseCustom_Changed" Unchecked="ChkUseCustom_Changed"/>
-                    <TextBlock Text="(Uncheck to use default prompts)"
+                    <TextBlock Text="（取消勾选使用默认提示词）"
                                Foreground="#606060" FontSize="11"
                                VerticalAlignment="Center" Margin="10,0,0,0"/>
                 </StackPanel>
             </StackPanel>
         </Border>
 
-        <!-- Scrollable Content -->
+        <!-- 滚动内容区 -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20">
             <StackPanel x:Name="ContentPanel">
 
-                <!-- Section 1: Personality -->
+                <!-- 第一部分：个性（普通模式） -->
                 <Expander IsExpanded="True" Margin="0,0,0,15">
                     <Expander.Header>
-                        <TextBlock Text="Personality (Normal Mode)" Style="{StaticResource SectionHeader}"/>
+                        <TextBlock Text="个性（普通模式）" Style="{StaticResource SectionHeader}"/>
                     </Expander.Header>
                     <StackPanel Margin="0,10,0,0">
                         <TextBlock Style="{StaticResource SectionDescription}">
-                            Define who your companion is. Their vibe, tone, and what topics they like to talk about.
-                            This is used when Slut Mode is OFF.
+                            定义你的伴侣是谁。他们的氛围、语调以及喜欢谈论的话题。此模式用于放荡模式关闭时。
                         </TextBlock>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -127,22 +126,21 @@
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="TxtPersonality" Style="{StaticResource PromptTextBox}"
                                      Height="120" TextChanged="OnTextChanged"/>
-                            <Button Grid.Column="1" Content="Reset" Style="{StaticResource ResetButton}"
+                            <Button Grid.Column="1" Content="重置" Style="{StaticResource ResetButton}"
                                     VerticalAlignment="Top" Margin="5,0,0,0"
                                     Click="ResetPersonality_Click"/>
                         </Grid>
                     </StackPanel>
                 </Expander>
 
-                <!-- Section 2: Explicit Reaction -->
+                <!-- 第二部分：敏感话题处理 -->
                 <Expander IsExpanded="False" Margin="0,0,0,15">
                     <Expander.Header>
-                        <TextBlock Text="Explicit Topic Handling" Style="{StaticResource SectionHeader}"/>
+                        <TextBlock Text="敏感话题处理" Style="{StaticResource SectionHeader}"/>
                     </Expander.Header>
                     <StackPanel Margin="0,10,0,0">
                         <TextBlock Style="{StaticResource SectionDescription}">
-                            How should your companion react when you mention explicit topics in Normal Mode?
-                            (In Slut Mode, this is ignored and they respond explicitly.)
+                            在普通模式下，当你提到敏感话题时，你的伴侣应该如何反应？（放荡模式下，此设置被忽略，他们会直接回应。）
                         </TextBlock>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -151,26 +149,25 @@
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="TxtExplicitReaction" Style="{StaticResource PromptTextBox}"
                                      Height="100" TextChanged="OnTextChanged"/>
-                            <Button Grid.Column="1" Content="Reset" Style="{StaticResource ResetButton}"
+                            <Button Grid.Column="1" Content="重置" Style="{StaticResource ResetButton}"
                                     VerticalAlignment="Top" Margin="5,0,0,0"
                                     Click="ResetExplicitReaction_Click"/>
                         </Grid>
                     </StackPanel>
                 </Expander>
 
-                <!-- Section 3: Slut Mode -->
+                <!-- 第三部分：放荡模式个性 -->
                 <Expander IsExpanded="False" Margin="0,0,0,15">
                     <Expander.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Slut Mode Personality" Style="{StaticResource SectionHeader}"/>
-                            <TextBlock Text="(Patreon)" Foreground="#9B59B6" FontSize="11"
+                            <TextBlock Text="放荡模式个性" Style="{StaticResource SectionHeader}"/>
+                            <TextBlock Text="（Patreon）" Foreground="#9B59B6" FontSize="11"
                                        VerticalAlignment="Center" Margin="8,0,0,0"/>
                         </StackPanel>
                     </Expander.Header>
                     <StackPanel Margin="0,10,0,0">
                         <TextBlock Style="{StaticResource SectionDescription}">
-                            Define the companion's personality when Slut Mode is enabled.
-                            This is more explicit and trigger-heavy. Requires Patreon Premium.
+                            定义放荡模式开启时伴侣的个性。这是更加露骨和触发式的。需要 Patreon 高级会员。
                         </TextBlock>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -179,22 +176,21 @@
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="TxtSlutMode" Style="{StaticResource PromptTextBox}"
                                      Height="140" TextChanged="OnTextChanged"/>
-                            <Button Grid.Column="1" Content="Reset" Style="{StaticResource ResetButton}"
+                            <Button Grid.Column="1" Content="重置" Style="{StaticResource ResetButton}"
                                     VerticalAlignment="Top" Margin="5,0,0,0"
                                     Click="ResetSlutMode_Click"/>
                         </Grid>
                     </StackPanel>
                 </Expander>
 
-                <!-- Section 4: Knowledge Base -->
+                <!-- 第四部分：知识库 -->
                 <Expander IsExpanded="False" Margin="0,0,0,15">
                     <Expander.Header>
-                        <TextBlock Text="Knowledge Base" Style="{StaticResource SectionHeader}"/>
+                        <TextBlock Text="知识库" Style="{StaticResource SectionHeader}"/>
                     </Expander.Header>
                     <StackPanel Margin="0,10,0,0">
                         <TextBlock Style="{StaticResource SectionDescription}">
-                            Files, videos, and resources your companion knows about and can recommend.
-                            List audio files, video series, creators, etc.
+                            你的伴侣了解并可以推荐的音频、视频及资源。列出音频文件、视频系列、创作者等。
                         </TextBlock>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -203,22 +199,21 @@
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="TxtKnowledgeBase" Style="{StaticResource PromptTextBox}"
                                      Height="140" TextChanged="OnTextChanged"/>
-                            <Button Grid.Column="1" Content="Reset" Style="{StaticResource ResetButton}"
+                            <Button Grid.Column="1" Content="重置" Style="{StaticResource ResetButton}"
                                     VerticalAlignment="Top" Margin="5,0,0,0"
                                     Click="ResetKnowledgeBase_Click"/>
                         </Grid>
                     </StackPanel>
                 </Expander>
 
-                <!-- Section 5: Context Reactions -->
+                <!-- 第五部分：屏幕感知反应 -->
                 <Expander IsExpanded="False" Margin="0,0,0,15">
                     <Expander.Header>
-                        <TextBlock Text="Screen Awareness Reactions" Style="{StaticResource SectionHeader}"/>
+                        <TextBlock Text="屏幕感知反应" Style="{StaticResource SectionHeader}"/>
                     </Expander.Header>
                     <StackPanel Margin="0,10,0,0">
                         <TextBlock Style="{StaticResource SectionDescription}">
-                            How your companion reacts to different apps and websites you're viewing.
-                            The companion receives context like [App: Chrome | Title: Reddit - r/BambiSleep].
+                            你的伴侣对你正在浏览的不同应用和网站会如何反应。伴侣会收到类似 [App: Chrome | Title: Reddit - r/BambiSleep] 的上下文。
                         </TextBlock>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -227,22 +222,21 @@
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="TxtContextReactions" Style="{StaticResource PromptTextBox}"
                                      Height="180" TextChanged="OnTextChanged"/>
-                            <Button Grid.Column="1" Content="Reset" Style="{StaticResource ResetButton}"
+                            <Button Grid.Column="1" Content="重置" Style="{StaticResource ResetButton}"
                                     VerticalAlignment="Top" Margin="5,0,0,0"
                                     Click="ResetContextReactions_Click"/>
                         </Grid>
                     </StackPanel>
                 </Expander>
 
-                <!-- Section 6: Output Rules -->
+                <!-- 第六部分：输出规则 -->
                 <Expander IsExpanded="False" Margin="0,0,0,15">
                     <Expander.Header>
-                        <TextBlock Text="Output Rules" Style="{StaticResource SectionHeader}"/>
+                        <TextBlock Text="输出规则" Style="{StaticResource SectionHeader}"/>
                     </Expander.Header>
                     <StackPanel Margin="0,10,0,0">
                         <TextBlock Style="{StaticResource SectionDescription}">
-                            Control how long responses are, emoji usage, and response frequency.
-                            Keep responses short for a texting feel.
+                            控制回复长度、表情符号使用以及回复频率。保持回复简短，营造聊天氛围。
                         </TextBlock>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -251,29 +245,28 @@
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="TxtOutputRules" Style="{StaticResource PromptTextBox}"
                                      Height="100" TextChanged="OnTextChanged"/>
-                            <Button Grid.Column="1" Content="Reset" Style="{StaticResource ResetButton}"
+                            <Button Grid.Column="1" Content="重置" Style="{StaticResource ResetButton}"
                                     VerticalAlignment="Top" Margin="5,0,0,0"
                                     Click="ResetOutputRules_Click"/>
                         </Grid>
                     </StackPanel>
                 </Expander>
 
-                <!-- Section 7: Global Knowledge Base Links -->
+                <!-- 第七部分：全局知识库链接 -->
                 <Expander IsExpanded="False" Margin="0,0,0,15">
                     <Expander.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Global Knowledge Base Links" Style="{StaticResource SectionHeader}"/>
-                            <TextBlock Text="(All Personalities)" Foreground="#50C878" FontSize="11"
+                            <TextBlock Text="全局知识库链接" Style="{StaticResource SectionHeader}"/>
+                            <TextBlock Text="（所有个性）" Foreground="#50C878" FontSize="11"
                                        VerticalAlignment="Center" Margin="8,0,0,0"/>
                         </StackPanel>
                     </Expander.Header>
                     <StackPanel Margin="0,10,0,0">
                         <TextBlock Style="{StaticResource SectionDescription}">
-                            Add URLs to hypno content that your companion knows about and can recommend.
-                            These links apply to ALL personalities, regardless of which preset is active.
+                            添加你的伴侣知道并能推荐的催眠内容链接。这些链接适用于所有个性，无论哪个预设处于活动状态。
                         </TextBlock>
 
-                        <!-- Links List -->
+                        <!-- 链接列表 -->
                         <Border Background="#252542" CornerRadius="4" Padding="8" Margin="0,0,0,8">
                             <ListBox x:Name="LstKnowledgeLinks" Height="120"
                                      Background="Transparent" BorderThickness="0"
@@ -292,11 +285,11 @@
                             </ListBox>
                         </Border>
 
-                        <!-- Add/Remove Buttons -->
+                        <!-- 添加/删除按钮 -->
                         <StackPanel Orientation="Horizontal">
-                            <Button Content="+ Add Link" Style="{StaticResource ResetButton}"
+                            <Button Content="+ 添加链接" Style="{StaticResource ResetButton}"
                                     Padding="12,6" Click="AddKnowledgeLink_Click"/>
-                            <Button Content="Remove Selected" Style="{StaticResource ResetButton}"
+                            <Button Content="删除选中" Style="{StaticResource ResetButton}"
                                     Padding="12,6" Margin="8,0,0,0" Click="RemoveKnowledgeLink_Click"/>
                         </StackPanel>
                     </StackPanel>
@@ -305,7 +298,7 @@
             </StackPanel>
         </ScrollViewer>
 
-        <!-- Footer -->
+        <!-- 底部栏 -->
         <Border Grid.Row="2" Background="#252542" Padding="20,15">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -313,17 +306,17 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Button x:Name="BtnResetAll" Content="Reset All to Defaults"
+                <Button x:Name="BtnResetAll" Content="全部重置为默认"
                         Style="{StaticResource ResetButton}"
                         HorizontalAlignment="Left"
                         Click="ResetAll_Click"/>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button x:Name="BtnCancel" Content="Cancel"
+                    <Button x:Name="BtnCancel" Content="取消"
                             Style="{StaticResource SecondaryButton}"
                             Width="80" Margin="0,0,10,0"
                             Click="BtnCancel_Click"/>
-                    <Button x:Name="BtnSave" Content="Save"
+                    <Button x:Name="BtnSave" Content="保存"
                             Style="{StaticResource ActionButton}"
                             Width="80"
                             Click="BtnSave_Click"/>
