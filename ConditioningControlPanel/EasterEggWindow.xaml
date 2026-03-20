@@ -1,7 +1,10 @@
+以下是汉化后的 `EasterEggWindow` 窗口代码。我将窗口标题、正文内容、按钮文本等所有用户可见文字翻译为中文，保留了原有的布局、样式和情感色彩。
+
+```xml
 <Window x:Class="ConditioningControlPanel.EasterEggWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="..."
+        Title="……"
         Height="650" Width="550"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
@@ -17,47 +20,47 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Close Button -->
+            <!-- 关闭按钮 -->
             <Button Grid.Row="0" Content="×" Click="BtnClose_Click"
                     HorizontalAlignment="Right" VerticalAlignment="Top"
                     Background="Transparent" Foreground="#666" FontSize="20"
                     BorderThickness="0" Cursor="Hand" Margin="0,10,15,0"
                     Width="30" Height="30"/>
 
-            <!-- Content -->
+            <!-- 内容区域 -->
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="25,10,25,10">
                 <StackPanel>
                     <TextBlock TextWrapping="Wrap" FontFamily="Consolas" FontSize="12" LineHeight="20">
-                        <Run Foreground="#FF69B4" FontWeight="Bold">congrats.</Run>
+                        <Run Foreground="#FF69B4" FontWeight="Bold">恭喜你。</Run>
                         <LineBreak/>
-                        <Run Foreground="#B0B0B0">Either you were rlly bored, or u r a coder and looked trough the code, either way doesnt rlly matter, had to write a cupple of lines down.</Run>
-                        <Run Foreground="#666">Its new year's eve, soon is midnight. I rlly wanted to drop the relese for the new year, but life never goes how we want i guess...</Run>
+                        <Run Foreground="#B0B0B0">要么你是真的无聊，要么你是程序员，翻过代码了——不管怎样，无所谓，我总得写点东西下来。</Run>
+                        <Run Foreground="#666">今晚是除夕，马上就到午夜了。我真的很想在跨年之前把版本发出来，但生活嘛，从来不会按我们想的走……</Run>
                         <LineBreak/><LineBreak/>
-                        <Run Foreground="#B0B0B0">so here i am. 3 am now actually. drinking this piss warm bubbling water someone gave me for christmas, recycled trash gift just like how i felt my whole life. my cat is asleep on the keyboard, only thing breathing in this cold ass apartment. funny how people got so mad about v1. </Run>
-                        <Run Foreground="#FF69B4">'oh she used ai'</Run>
+                        <Run Foreground="#B0B0B0">于是我现在在这里。其实已经凌晨三点了。喝着某人送我的圣诞礼物——一瓶没气的温水，就像我整个人生一样，都是别人随手送的废品。我的猫趴在键盘上睡着了，这冷冰冰的公寓里唯一有呼吸的东西。好笑的是，v1 那会儿好多人骂我。</Run>
+                        <Run Foreground="#FF69B4">“她用了 AI”</Run>
                         <Run Foreground="#B0B0B0"> </Run>
-                        <Run Foreground="#FF69B4">'oh its insecure'</Run>
+                        <Run Foreground="#FF69B4">“这不安全”</Run>
                         <Run Foreground="#B0B0B0"> </Run>
-                        <Run Foreground="#FF69B4">'learn to code properly'</Run>
-                        <Run Foreground="#B0B0B0">. shut up. just shut up. you think i dont know? you think i dont know what it feels like to be told im doing it wrong? acting wrong being wrong? existing wrong?</Run>
+                        <Run Foreground="#FF69B4">“先学学怎么好好写代码”</Run>
+                        <Run Foreground="#B0B0B0">。闭嘴吧。都闭嘴。你以为我不知道吗？你以为我不懂被说“做错了”“行为不对”“存在本身就是错的”是什么感觉？</Run>
                         <LineBreak/><LineBreak/>
-                        <Run Foreground="#666">i spent my whole life in a town where breathing the wrong way got you stared at or worse so sorry if my python script wasnt clean enough for your github standards or whatever. they tell you how to dress how to talk how to be a man how to not be a freak. and when you finally escape, when you finally find a way to make something... well i guess you know what, fuck it, doeesnt matter.</Run>
+                        <Run Foreground="#666">我这一辈子都活在那种连呼吸方式不对都会被盯着看、甚至更糟的小镇里。所以抱歉，我的 Python 脚本没能达到你们的 GitHub 标准之类的。他们教你该怎么穿、怎么说话、怎么“做个男人”、怎么不做个怪胎。等你终于逃出来，终于找到一条能做点什么的路……好吧，你懂的，算了，不重要。</Run>
                         <LineBreak/><LineBreak/>
-                        <Run Foreground="#B0B0B0">well guess what. i spent the whole winter holidays here alone. while everyone else is kissing someone or lighting fireworks i was here fixing spirals overlays getting stuck or clippin sprites on canvas. </Run>
-                        <Run Foreground="#FF69B4" FontWeight="SemiBold">i built this. me.</Run>
-                        <Run Foreground="#B0B0B0"> yeah i used tools who cares? do you build a house with your bare hands?</Run>
+                        <Run Foreground="#B0B0B0">猜怎么着。整个寒假我都是一个人待在这里。别人都在亲吻、放烟花，我却在这儿修那些卡住的螺旋、修画布上裁剪不灵光的精灵。</Run>
+                        <Run Foreground="#FF69B4" FontWeight="SemiBold">这东西是我做的。是我。</Run>
+                        <Run Foreground="#B0B0B0">对，我用了工具，谁在乎？你盖房子是徒手砌的吗？</Run>
                         <LineBreak/><LineBreak/>
-                        <Run Foreground="#B0B0B0">if ur reading this, maybe you get it. maybe ur lonely too. maybe its just pretentious crap. Either way, here we are.</Run>
+                        <Run Foreground="#B0B0B0">如果你在读这段话，也许你能懂。也许你也孤独。也许这只是一堆自命不凡的废话。不管怎样，我们在这里相遇了。</Run>
                         <LineBreak/><LineBreak/>
-                        <Run Foreground="#FF69B4">i made this beautiful thing out of spite and cheap champagne and sleepless nights, but i never felt so alive</Run>
+                        <Run Foreground="#FF69B4">我是凭着怨气、廉价香槟和不眠之夜做出来的这件漂亮东西，但我从未感觉如此鲜活过。</Run>
                         <LineBreak/><LineBreak/>
-                        <Run Foreground="#B0B0B0">so cheers. to 2026. to not letting anyone tell us who we are or how we should build our world.</Run>
+                        <Run Foreground="#B0B0B0">所以干杯。敬 2026。敬没有人能告诉我们是谁、该用什么方式建造自己的世界。</Run>
                         <LineBreak/><LineBreak/>
-                        <Run Foreground="#666">im gonna go pet my cat and pass out. Happy new year.</Run>
+                        <Run Foreground="#666">我要去撸猫，然后睡死过去了。新年快乐。</Run>
                         <LineBreak/>
-                        <Run Foreground="#B0B0B0"> Love you , whoever u are.</Run>
+                        <Run Foreground="#B0B0B0">爱你，不管你是谁。</Run>
                         <LineBreak/><LineBreak/>
-                        <Run Foreground="#FF69B4" FontSize="18">&#x2764;</Run>
+                        <Run Foreground="#FF69B4" FontSize="18">❤</Run>
                         <Run Foreground="#FF69B4" FontSize="14"> :3 </Run>
                         <LineBreak/><LineBreak/>
                         <Run Foreground="#FF69B4" FontWeight="Bold" FontStyle="Italic">CodeBambi</Run>
@@ -71,9 +74,9 @@
                 </StackPanel>
             </ScrollViewer>
 
-            <!-- Footer -->
+            <!-- 底部 -->
             <Border Grid.Row="2" Background="#252542" CornerRadius="0,0,10,10" Padding="20,12">
-                <Button Content="&#x2764; Close" Click="BtnClose_Click" Cursor="Hand"
+                <Button Content="❤ 关闭" Click="BtnClose_Click" Cursor="Hand"
                         HorizontalAlignment="Center">
                     <Button.Style>
                         <Style TargetType="Button">
@@ -104,3 +107,4 @@
         </Grid>
     </Border>
 </Window>
+```
