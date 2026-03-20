@@ -1,7 +1,10 @@
+以下是汉化后的 `QuizWindow.xaml` 代码：
+
+```xml
 <Window x:Class="ConditioningControlPanel.QuizWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Quiz"
+        Title="测验"
         Width="900" Height="750"
         MinWidth="600" MinHeight="500"
         WindowStartupLocation="CenterScreen"
@@ -65,13 +68,13 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="Quiz" Foreground="#FF69B4" FontSize="13" FontWeight="SemiBold"
+                <TextBlock Text="测验" Foreground="#FF69B4" FontSize="13" FontWeight="SemiBold"
                            VerticalAlignment="Center" Margin="14,0,0,0"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button x:Name="BtnMaximizeTitleBar" Content="☐" Width="36" Height="36"
                         BorderThickness="0" FontSize="14" Cursor="Hand"
                         Click="BtnMaximizeTitleBar_Click"
-                        ToolTip="Maximize / Restore">
+                        ToolTip="最大化 / 还原">
                     <Button.Style>
                         <Style TargetType="Button">
                             <Setter Property="Background" Value="Transparent"/>
@@ -97,7 +100,7 @@
                 <Button x:Name="BtnCloseTitleBar" Content="✕" Width="36" Height="36"
                         BorderThickness="0" FontSize="14" Cursor="Hand"
                         Click="BtnCloseTitleBar_Click"
-                        ToolTip="Close (Escape)">
+                        ToolTip="关闭（Esc）">
                     <Button.Style>
                         <Style TargetType="Button">
                             <Setter Property="Background" Value="Transparent"/>
@@ -161,16 +164,16 @@
         <Grid x:Name="CategorySelectPanel" Visibility="Visible">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="500">
                 <!-- Title -->
-                <TextBlock Text="SISSY QUIZ" FontSize="58" FontWeight="Bold" Foreground="White"
+                <TextBlock Text="SISSY 测验" FontSize="58" FontWeight="Bold" Foreground="White"
                            HorizontalAlignment="Center" Margin="0,0,0,8">
                     <TextBlock.Effect>
                         <DropShadowEffect Color="#FF69B4" BlurRadius="30" ShadowDepth="0" Opacity="0.6"/>
                     </TextBlock.Effect>
                 </TextBlock>
-                <TextBlock Text="AI-generated personality quiz" Foreground="#808090" FontSize="19"
+                <TextBlock Text="AI生成的个性测验" Foreground="#808090" FontSize="19"
                            HorizontalAlignment="Center" Margin="0,0,0,40"/>
 
-                <TextBlock Text="Choose your category" Foreground="#B0B0C8" FontSize="22"
+                <TextBlock Text="选择您的类别" Foreground="#B0B0C8" FontSize="22"
                            HorizontalAlignment="Center" Margin="0,0,0,20"/>
 
                 <!-- Dynamic category buttons (populated from code-behind) -->
@@ -179,7 +182,7 @@
                 </ScrollViewer>
 
                 <!-- ESC hint -->
-                <TextBlock Text="Press ESC to close" Foreground="#404060" FontSize="13"
+                <TextBlock Text="按 ESC 关闭" Foreground="#404060" FontSize="13"
                            HorizontalAlignment="Center" Margin="0,24,0,0"/>
             </StackPanel>
         </Grid>
@@ -187,13 +190,13 @@
         <!-- ============ LOADING PANEL ============ -->
         <Grid x:Name="LoadingPanel" Visibility="Collapsed">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock x:Name="TxtLoadingDots" Text="Generating..." FontSize="36" FontWeight="Bold"
+                <TextBlock x:Name="TxtLoadingDots" Text="生成中..." FontSize="36" FontWeight="Bold"
                            Foreground="#FF69B4" HorizontalAlignment="Center">
                     <TextBlock.Effect>
                         <DropShadowEffect Color="#FF69B4" BlurRadius="20" ShadowDepth="0" Opacity="0.4"/>
                     </TextBlock.Effect>
                 </TextBlock>
-                <TextBlock x:Name="TxtLoadingFlavor" Text="The quiz master is thinking up something devious..."
+                <TextBlock x:Name="TxtLoadingFlavor" Text="测验大师正在想出一些恶作剧..."
                            Foreground="#606080" FontSize="19" HorizontalAlignment="Center" Margin="0,12,0,0"/>
             </StackPanel>
         </Grid>
@@ -356,7 +359,7 @@
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
                             MaxWidth="600" Margin="40">
                     <!-- Score header -->
-                    <TextBlock Text="YOUR RESULT" FontSize="24" FontWeight="Bold"
+                    <TextBlock Text="你的结果" FontSize="24" FontWeight="Bold"
                                Foreground="#808090" HorizontalAlignment="Center" Margin="0,0,0,8"/>
 
                     <TextBlock x:Name="TxtFinalScore" FontSize="67" FontWeight="Bold"
@@ -395,21 +398,21 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <TextBlock x:Name="TxtTrySessionIcon" Text="&#x23F3;" FontSize="22"
                                        VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock x:Name="TxtTrySessionLabel" Text="Generating your session..."
+                            <TextBlock x:Name="TxtTrySessionLabel" Text="正在生成你的会话..."
                                        Foreground="#C0C0D8" FontSize="18" FontWeight="SemiBold"
                                        VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
 
                     <!-- Score Trend -->
-                    <TextBlock x:Name="TxtTrendHeader" Text="YOUR JOURNEY" FontSize="14" FontWeight="Bold"
+                    <TextBlock x:Name="TxtTrendHeader" Text="你的旅程" FontSize="14" FontWeight="Bold"
                                Foreground="#606080" HorizontalAlignment="Center" Margin="0,0,0,10"
                                Visibility="Collapsed"/>
                     <StackPanel x:Name="TrendPanel" Margin="0,0,0,20"/>
 
                     <!-- Buttons -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Button x:Name="BtnPlayAgain" Content="Play Again" Cursor="Hand"
+                        <Button x:Name="BtnPlayAgain" Content="再玩一次" Cursor="Hand"
                                 Background="#9B59B6" Foreground="White" FontWeight="Bold" FontSize="19"
                                 BorderThickness="0" Padding="28,14" Margin="0,0,12,0"
                                 Click="BtnPlayAgain_Click">
@@ -419,7 +422,7 @@
                                 </Style>
                             </Button.Resources>
                         </Button>
-                        <Button x:Name="BtnCloseResult" Content="Close" Cursor="Hand"
+                        <Button x:Name="BtnCloseResult" Content="关闭" Cursor="Hand"
                                 Background="#20FFFFFF" Foreground="#B0B0C8" FontWeight="Bold" FontSize="19"
                                 BorderThickness="1" Padding="28,14"
                                 Click="BtnCloseResult_Click">
@@ -440,11 +443,11 @@
         <!-- ============ ERROR PANEL ============ -->
         <Grid x:Name="ErrorPanel" Visibility="Collapsed">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="400">
-                <TextBlock Text="Oops!" FontSize="34" FontWeight="Bold" Foreground="#FF6B6B"
+                <TextBlock Text="哎呀！" FontSize="34" FontWeight="Bold" Foreground="#FF6B6B"
                            HorizontalAlignment="Center" Margin="0,0,0,12"/>
                 <TextBlock x:Name="TxtError" FontSize="17" Foreground="#808090"
                            TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,24"/>
-                <Button Content="Try Again" Cursor="Hand"
+                <Button Content="再试一次" Cursor="Hand"
                         Background="#9B59B6" Foreground="White" FontWeight="Bold" FontSize="17"
                         BorderThickness="0" Padding="24,12" HorizontalAlignment="Center"
                         Click="BtnPlayAgain_Click">
@@ -454,7 +457,7 @@
                         </Style>
                     </Button.Resources>
                 </Button>
-                <TextBlock Text="Press ESC to close" Foreground="#404060" FontSize="13"
+                <TextBlock Text="按 ESC 关闭" Foreground="#404060" FontSize="13"
                            HorizontalAlignment="Center" Margin="0,16,0,0"/>
             </StackPanel>
         </Grid>
@@ -462,3 +465,4 @@
         </Grid>
     </Grid>
 </Window>
+```
