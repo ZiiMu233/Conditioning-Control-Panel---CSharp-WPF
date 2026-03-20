@@ -1,7 +1,7 @@
 <Window x:Class="ConditioningControlPanel.HapticsSetupWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Haptics Setup Guide" Height="700" Width="450"
+        Title="触觉反馈设置指南" Height="700" Width="450"
         WindowStartupLocation="CenterOwner"
         Background="#1A1A2E" ResizeMode="NoResize"
         WindowStyle="None" AllowsTransparency="True">
@@ -14,14 +14,14 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Header -->
+            <!-- 头部 -->
             <Grid Grid.Row="0" Background="#252542" Margin="0,0,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal" Margin="15,10">
-                    <TextBlock x:Name="TxtTitle" Text="Haptics Setup Guide"
+                    <TextBlock x:Name="TxtTitle" Text="触觉反馈设置指南"
                                Foreground="#FF69B4" FontSize="18" FontWeight="Bold"/>
                 </StackPanel>
                 <Button Grid.Column="1" Content="X" Width="30" Height="30"
@@ -30,13 +30,13 @@
                         Click="BtnClose_Click" Margin="0,5,10,5"/>
             </Grid>
 
-            <!-- Content Area -->
+            <!-- 内容区域 -->
             <Grid Grid.Row="1" Margin="20">
 
-                <!-- Provider Selection (Initial Screen) -->
+                <!-- 设备类型选择（初始界面） -->
                 <Grid x:Name="ProviderSelectionGrid" Visibility="Visible">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <TextBlock Text="Select your device type:" Foreground="White"
+                        <TextBlock Text="选择您的设备类型：" Foreground="White"
                                    FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,30"/>
 
                         <Button x:Name="BtnSelectLovense" Width="280" Height="80"
@@ -45,7 +45,7 @@
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Lovense" Foreground="#FF69B4" FontSize="20"
                                            FontWeight="Bold" VerticalAlignment="Center"/>
-                                <TextBlock Text=" Connect" Foreground="White" FontSize="20"
+                                <TextBlock Text=" 连接" Foreground="White" FontSize="20"
                                            VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -63,27 +63,26 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- Lovense Tutorial Slides -->
+                <!-- Lovense 教程幻灯片 -->
                 <Grid x:Name="LovenseSlides" Visibility="Collapsed">
-                    <!-- Slide 1: Discover + Game Mode -->
+                    <!-- 幻灯片 1：发现 + 游戏模式 -->
                     <Grid x:Name="LovenseSlide1" Visibility="Visible">
                         <StackPanel>
                             <Border Background="#FF69B4" CornerRadius="4" Padding="8,4"
                                     HorizontalAlignment="Left" Margin="0,0,0,10">
-                                <TextBlock Text="STEP 1" Foreground="White" FontWeight="Bold" FontSize="12"/>
+                                <TextBlock Text="第 1 步" Foreground="White" FontWeight="Bold" FontSize="12"/>
                             </Border>
-                            <TextBlock Text="Open Lovense Remote App" Foreground="White"
+                            <TextBlock Text="打开 Lovense Remote 应用" Foreground="White"
                                        FontSize="16" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBlock TextWrapping="Wrap" Foreground="#B0B0B0" FontSize="13" Margin="0,0,0,15">
-                                <Run>1. Open the </Run>
+                                <Run>1. 在手机上打开 </Run>
                                 <Run Foreground="#FF69B4" FontWeight="Bold">Lovense Remote</Run>
-                                <Run> app on your phone</Run>
+                                <Run> 应用</Run>
                                 <LineBreak/>
-                                <Run>2. Tap </Run>
+                                <Run>2. 点击底部 </Run>
                                 <Run Foreground="#FF69B4" FontWeight="Bold">Discover</Run>
-                                <Run> at the bottom</Run>
                                 <LineBreak/>
-                                <Run>3. Find and tap </Run>
+                                <Run>3. 找到并点击 </Run>
                                 <Run Foreground="#FF69B4" FontWeight="Bold">Game Mode</Run>
                             </TextBlock>
                             <Border Background="#2D2D4A" CornerRadius="8" Padding="10" MaxHeight="400">
@@ -93,27 +92,27 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- Slide 2: Enable LAN -->
+                    <!-- 幻灯片 2：启用局域网 -->
                     <Grid x:Name="LovenseSlide2" Visibility="Collapsed">
                         <StackPanel>
                             <Border Background="#FF69B4" CornerRadius="4" Padding="8,4"
                                     HorizontalAlignment="Left" Margin="0,0,0,10">
-                                <TextBlock Text="STEP 2" Foreground="White" FontWeight="Bold" FontSize="12"/>
+                                <TextBlock Text="第 2 步" Foreground="White" FontWeight="Bold" FontSize="12"/>
                             </Border>
-                            <TextBlock Text="Enable LAN Connection" Foreground="White"
+                            <TextBlock Text="启用局域网连接" Foreground="White"
                                        FontSize="16" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBlock TextWrapping="Wrap" Foreground="#B0B0B0" FontSize="13" Margin="0,0,0,15">
-                                <Run>1. Toggle </Run>
+                                <Run>1. 将 </Run>
                                 <Run Foreground="#FF69B4" FontWeight="Bold">Enable LAN</Run>
-                                <Run> to ON</Run>
+                                <Run> 开关打开</Run>
                                 <LineBreak/>
-                                <Run>2. Note the </Run>
+                                <Run>2. 记下显示的 </Run>
                                 <Run Foreground="#FF69B4" FontWeight="Bold">Local IP</Run>
-                                <Run> address shown</Run>
+                                <Run> 地址</Run>
                                 <LineBreak/>
-                                <Run>3. Note the </Run>
+                                <Run>3. 记下 </Run>
                                 <Run Foreground="#FF69B4" FontWeight="Bold">Port</Run>
-                                <Run> number (usually 20010)</Run>
+                                <Run> 端口号（通常为 20010）</Run>
                             </TextBlock>
                             <Border Background="#2D2D4A" CornerRadius="8" Padding="10" MaxHeight="400">
                                 <Image x:Name="ImgLovenseStep2" Stretch="Uniform"
@@ -122,35 +121,35 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- Slide 3: Enter URL -->
+                    <!-- 幻灯片 3：输入 URL -->
                     <Grid x:Name="LovenseSlide3" Visibility="Collapsed">
                         <StackPanel VerticalAlignment="Center">
                             <Border Background="#FF69B4" CornerRadius="4" Padding="8,4"
                                     HorizontalAlignment="Left" Margin="0,0,0,10">
-                                <TextBlock Text="STEP 3" Foreground="White" FontWeight="Bold" FontSize="12"/>
+                                <TextBlock Text="第 3 步" Foreground="White" FontWeight="Bold" FontSize="12"/>
                             </Border>
-                            <TextBlock Text="Enter Connection URL" Foreground="White"
+                            <TextBlock Text="输入连接地址" Foreground="White"
                                        FontSize="16" FontWeight="Bold" Margin="0,0,0,15"/>
 
                             <Border Background="#2D2D4A" CornerRadius="8" Padding="20" Margin="0,0,0,20">
                                 <StackPanel>
-                                    <TextBlock Text="In the Conditioning Control Panel:" Foreground="White"
+                                    <TextBlock Text="在条件控制面板中：" Foreground="White"
                                                FontSize="14" Margin="0,0,0,15"/>
                                     <TextBlock TextWrapping="Wrap" Foreground="#B0B0B0" FontSize="13">
-                                        <Run>1. Select </Run>
+                                        <Run>1. 选择 </Run>
                                         <Run Foreground="#FF69B4" FontWeight="Bold">Lovense Connect</Run>
-                                        <Run> as provider</Run>
+                                        <Run> 作为提供程序</Run>
                                         <LineBreak/><LineBreak/>
-                                        <Run>2. Enter the URL in this format:</Run>
+                                        <Run>2. 按照以下格式输入地址：</Run>
                                     </TextBlock>
 
                                     <Border Background="#1A1A2E" CornerRadius="4" Padding="12" Margin="0,10,0,10">
-                                        <TextBlock Text="http://[IP]:[Port]" Foreground="#FF69B4"
+                                        <TextBlock Text="http://[IP]:[端口]" Foreground="#FF69B4"
                                                    FontSize="16" FontWeight="Bold" FontFamily="Consolas"
                                                    HorizontalAlignment="Center"/>
                                     </Border>
 
-                                    <TextBlock Text="Example:" Foreground="#808080" FontSize="12" Margin="0,5,0,5"/>
+                                    <TextBlock Text="示例：" Foreground="#808080" FontSize="12" Margin="0,5,0,5"/>
                                     <Border Background="#1A1A2E" CornerRadius="4" Padding="10">
                                         <TextBlock Text="http://192.168.1.104:20010" Foreground="#00FF00"
                                                    FontSize="14" FontFamily="Consolas"
@@ -158,10 +157,10 @@
                                     </Border>
 
                                     <TextBlock TextWrapping="Wrap" Foreground="#B0B0B0" FontSize="13" Margin="0,15,0,0">
-                                        <Run>3. Click </Run>
-                                        <Run Foreground="#FF69B4" FontWeight="Bold">Connect</Run>
+                                        <Run>3. 点击 </Run>
+                                        <Run Foreground="#FF69B4" FontWeight="Bold">连接</Run>
                                         <LineBreak/><LineBreak/>
-                                        <Run Foreground="#FFD700">Tip: Make sure your phone and PC are on the same WiFi network!</Run>
+                                        <Run Foreground="#FFD700">提示：确保手机和电脑连接到同一个 WiFi 网络！</Run>
                                     </TextBlock>
                                 </StackPanel>
                             </Border>
@@ -169,28 +168,28 @@
                     </Grid>
                 </Grid>
 
-                <!-- Buttplug.io Tutorial Slides -->
+                <!-- Buttplug.io 教程幻灯片 -->
                 <Grid x:Name="ButtplugSlides" Visibility="Collapsed">
-                    <!-- Slide 1: Start Engine -->
+                    <!-- 幻灯片 1：启动引擎 -->
                     <Grid x:Name="ButtplugSlide1" Visibility="Visible">
                         <StackPanel>
                             <Border Background="#9B59B6" CornerRadius="4" Padding="8,4"
                                     HorizontalAlignment="Left" Margin="0,0,0,10">
-                                <TextBlock Text="STEP 1" Foreground="White" FontWeight="Bold" FontSize="12"/>
+                                <TextBlock Text="第 1 步" Foreground="White" FontWeight="Bold" FontSize="12"/>
                             </Border>
-                            <TextBlock Text="Start Intiface Central" Foreground="White"
+                            <TextBlock Text="启动 Intiface Central" Foreground="White"
                                        FontSize="16" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBlock TextWrapping="Wrap" Foreground="#B0B0B0" FontSize="13" Margin="0,0,0,15">
-                                <Run>1. Download and install </Run>
+                                <Run>1. 下载并安装 </Run>
                                 <Run Foreground="#9B59B6" FontWeight="Bold">Intiface Central</Run>
                                 <LineBreak/>
-                                <Run>2. Click </Run>
+                                <Run>2. 点击 </Run>
                                 <Run Foreground="#9B59B6" FontWeight="Bold">Start Server</Run>
-                                <Run> to launch the engine</Run>
+                                <Run> 启动服务引擎</Run>
                                 <LineBreak/>
-                                <Run>3. Click </Run>
+                                <Run>3. 点击 </Run>
                                 <Run Foreground="#9B59B6" FontWeight="Bold">Start Scanning</Run>
-                                <Run> to find devices</Run>
+                                <Run> 搜索设备</Run>
                             </TextBlock>
                             <Border Background="#2D2D4A" CornerRadius="8" Padding="10" MaxHeight="400">
                                 <Image x:Name="ImgButtplugStep1" Stretch="Uniform"
@@ -199,25 +198,25 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- Slide 2: Find Device -->
+                    <!-- 幻灯片 2：连接设备 -->
                     <Grid x:Name="ButtplugSlide2" Visibility="Collapsed">
                         <StackPanel>
                             <Border Background="#9B59B6" CornerRadius="4" Padding="8,4"
                                     HorizontalAlignment="Left" Margin="0,0,0,10">
-                                <TextBlock Text="STEP 2" Foreground="White" FontWeight="Bold" FontSize="12"/>
+                                <TextBlock Text="第 2 步" Foreground="White" FontWeight="Bold" FontSize="12"/>
                             </Border>
-                            <TextBlock Text="Connect Your Device" Foreground="White"
+                            <TextBlock Text="连接您的设备" Foreground="White"
                                        FontSize="16" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBlock TextWrapping="Wrap" Foreground="#B0B0B0" FontSize="13" Margin="0,0,0,15">
-                                <Run>1. Put your toy in </Run>
-                                <Run Foreground="#9B59B6" FontWeight="Bold">pairing mode</Run>
+                                <Run>1. 将设备置于 </Run>
+                                <Run Foreground="#9B59B6" FontWeight="Bold">配对模式</Run>
                                 <LineBreak/>
-                                <Run>2. Wait for it to appear in the </Run>
+                                <Run>2. 等待设备出现在 </Run>
                                 <Run Foreground="#9B59B6" FontWeight="Bold">Devices</Run>
-                                <Run> list</Run>
+                                <Run> 列表中</Run>
                                 <LineBreak/>
-                                <Run>3. The device should show as </Run>
-                                <Run Foreground="#00FF00">connected</Run>
+                                <Run>3. 设备应显示为 </Run>
+                                <Run Foreground="#00FF00">已连接</Run>
                             </TextBlock>
                             <Border Background="#2D2D4A" CornerRadius="8" Padding="10" MaxHeight="400">
                                 <Image x:Name="ImgButtplugStep2" Stretch="Uniform"
@@ -226,26 +225,26 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- Slide 3: Enter URL -->
+                    <!-- 幻灯片 3：输入 URL -->
                     <Grid x:Name="ButtplugSlide3" Visibility="Collapsed">
                         <StackPanel VerticalAlignment="Center">
                             <Border Background="#9B59B6" CornerRadius="4" Padding="8,4"
                                     HorizontalAlignment="Left" Margin="0,0,0,10">
-                                <TextBlock Text="STEP 3" Foreground="White" FontWeight="Bold" FontSize="12"/>
+                                <TextBlock Text="第 3 步" Foreground="White" FontWeight="Bold" FontSize="12"/>
                             </Border>
-                            <TextBlock Text="Enter Connection URL" Foreground="White"
+                            <TextBlock Text="输入连接地址" Foreground="White"
                                        FontSize="16" FontWeight="Bold" Margin="0,0,0,15"/>
 
                             <Border Background="#2D2D4A" CornerRadius="8" Padding="20" Margin="0,0,0,20">
                                 <StackPanel>
-                                    <TextBlock Text="In the Conditioning Control Panel:" Foreground="White"
+                                    <TextBlock Text="在条件控制面板中：" Foreground="White"
                                                FontSize="14" Margin="0,0,0,15"/>
                                     <TextBlock TextWrapping="Wrap" Foreground="#B0B0B0" FontSize="13">
-                                        <Run>1. Select </Run>
+                                        <Run>1. 选择 </Run>
                                         <Run Foreground="#9B59B6" FontWeight="Bold">Buttplug.io (Intiface)</Run>
-                                        <Run> as provider</Run>
+                                        <Run> 作为提供程序</Run>
                                         <LineBreak/><LineBreak/>
-                                        <Run>2. Enter the default URL:</Run>
+                                        <Run>2. 输入默认地址：</Run>
                                     </TextBlock>
 
                                     <Border Background="#1A1A2E" CornerRadius="4" Padding="12" Margin="0,10,0,10">
@@ -255,16 +254,16 @@
                                     </Border>
 
                                     <TextBlock TextWrapping="Wrap" Foreground="#B0B0B0" FontSize="13" Margin="0,10,0,0">
-                                        <Run Foreground="#808080">This is the default Intiface server address.</Run>
+                                        <Run Foreground="#808080">这是 Intiface 服务器的默认地址。</Run>
                                         <LineBreak/>
-                                        <Run Foreground="#808080">Only change it if you modified the settings in Intiface.</Run>
+                                        <Run Foreground="#808080">仅当您修改了 Intiface 中的设置时才需要更改。</Run>
                                     </TextBlock>
 
                                     <TextBlock TextWrapping="Wrap" Foreground="#B0B0B0" FontSize="13" Margin="0,15,0,0">
-                                        <Run>3. Click </Run>
-                                        <Run Foreground="#9B59B6" FontWeight="Bold">Connect</Run>
+                                        <Run>3. 点击 </Run>
+                                        <Run Foreground="#9B59B6" FontWeight="Bold">连接</Run>
                                         <LineBreak/><LineBreak/>
-                                        <Run Foreground="#FFD700">Tip: Make sure Intiface Central is running before connecting!</Run>
+                                        <Run Foreground="#FFD700">提示：连接前请确保 Intiface Central 正在运行！</Run>
                                     </TextBlock>
                                 </StackPanel>
                             </Border>
@@ -273,7 +272,7 @@
                 </Grid>
             </Grid>
 
-            <!-- Navigation Footer -->
+            <!-- 导航底部栏 -->
             <Grid Grid.Row="2" Background="#252542" Margin="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -281,7 +280,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <Button x:Name="BtnPrevious" Content="Previous"
+                <Button x:Name="BtnPrevious" Content="上一步"
                         Grid.Column="0" HorizontalAlignment="Left"
                         Background="#353555" Foreground="White"
                         BorderThickness="0" Padding="20,10" Margin="15,10"
@@ -296,14 +295,14 @@
                     <Ellipse x:Name="Dot3" Width="10" Height="10" Fill="#404060" Margin="5,0"/>
                 </StackPanel>
 
-                <Button x:Name="BtnNext" Content="Next"
+                <Button x:Name="BtnNext" Content="下一步"
                         Grid.Column="2" HorizontalAlignment="Right"
                         Background="#FF69B4" Foreground="White"
                         BorderThickness="0" Padding="20,10" Margin="15,10"
                         FontSize="13" Cursor="Hand" Visibility="Collapsed"
                         Click="BtnNext_Click"/>
 
-                <Button x:Name="BtnDone" Content="Done"
+                <Button x:Name="BtnDone" Content="完成"
                         Grid.Column="2" HorizontalAlignment="Right"
                         Background="#00AA00" Foreground="White"
                         BorderThickness="0" Padding="20,10" Margin="15,10"
