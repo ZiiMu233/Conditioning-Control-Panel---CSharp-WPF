@@ -1,7 +1,10 @@
+以下是汉化后的 `UsernamePickerDialog.xaml` 代码：
+
+```xml
 <Window x:Class="ConditioningControlPanel.UsernamePickerDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Choose Your Display Name" Height="350" Width="450"
+        Title="选择您的显示名称" Height="350" Width="450"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
         Background="#1A1A2E" WindowStyle="None" AllowsTransparency="True"
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
@@ -17,44 +20,44 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Title -->
-            <TextBlock Grid.Row="0" Text="Choose Your Display Name"
+            <!-- 标题 -->
+            <TextBlock Grid.Row="0" Text="选择您的显示名称"
                        FontSize="24" FontWeight="Bold" Foreground="#FF69B4"
                        HorizontalAlignment="Center" Margin="0,0,0,10"/>
 
-            <!-- Subtitle for new users -->
+            <!-- 新用户副标题 -->
             <TextBlock x:Name="TxtSubtitle" Grid.Row="1"
-                       Text="This name will be shown on the leaderboard and to other users."
+                       Text="此名称将显示在排行榜上并供其他用户查看。"
                        FontSize="12" Foreground="#B0B0B0" TextWrapping="Wrap"
                        HorizontalAlignment="Center" Margin="0,0,0,15"/>
 
-            <!-- OG Welcome message (hidden by default) -->
+            <!-- OG 欢迎消息（默认隐藏） -->
             <Border x:Name="OgWelcomePanel" Grid.Row="2" Visibility="Collapsed"
                     Background="#30FFD700" BorderBrush="#FFD700" BorderThickness="1"
                     CornerRadius="5" Padding="10" Margin="0,0,0,15">
                 <StackPanel>
-                    <TextBlock Text="⭐ Welcome Back, Pioneer! ⭐"
+                    <TextBlock Text="⭐ 欢迎回来，先驱！⭐"
                                FontSize="16" FontWeight="Bold" Foreground="#FFD700"
                                HorizontalAlignment="Center"/>
-                    <TextBlock Text="You've been recognized as a Season 0 OG! Your unlocks and achievements have been restored."
+                    <TextBlock Text="您已被识别为第0赛季的OG！您的解锁和成就已恢复。"
                                FontSize="11" Foreground="White" TextWrapping="Wrap"
                                HorizontalAlignment="Center" Margin="0,5,0,0"/>
                 </StackPanel>
             </Border>
 
-            <!-- Username input -->
+            <!-- 用户名输入 -->
             <StackPanel Grid.Row="3" Margin="0,0,0,10">
-                <TextBlock Text="Display Name:" Foreground="White" FontSize="14" Margin="0,0,0,5"/>
+                <TextBlock Text="显示名称：" Foreground="White" FontSize="14" Margin="0,0,0,5"/>
                 <TextBox x:Name="TxtUsername" FontSize="18" Padding="10,8"
                          Background="#252542" Foreground="White" BorderBrush="#FF69B4"
                          MaxLength="30" TextChanged="TxtUsername_TextChanged"/>
                 <TextBlock x:Name="TxtAvailability" FontSize="11" Margin="0,5,0,0"
-                           Foreground="#B0B0B0" Text="Enter a unique display name (3-30 characters)"/>
+                           Foreground="#B0B0B0" Text="输入唯一的显示名称（3-30个字符）"/>
             </StackPanel>
 
-            <!-- Suggested name (from legacy data or provider) -->
+            <!-- 建议名称（来自旧账户或提供商） -->
             <StackPanel x:Name="SuggestionPanel" Grid.Row="4" Visibility="Collapsed" Margin="0,0,0,10">
-                <TextBlock Text="Suggested name from your previous account:"
+                <TextBlock Text="您之前账户的建议名称："
                            Foreground="#B0B0B0" FontSize="11"/>
                 <Button x:Name="BtnUseSuggestion" Content="" Padding="10,5"
                         Background="#352545" Foreground="#FF69B4" BorderThickness="0"
@@ -62,15 +65,16 @@
                         HorizontalAlignment="Left"/>
             </StackPanel>
 
-            <!-- Buttons -->
+            <!-- 按钮 -->
             <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-                <Button x:Name="BtnCancel" Content="Cancel" Padding="20,10"
+                <Button x:Name="BtnCancel" Content="取消" Padding="20,10"
                         Background="#352545" Foreground="White" BorderThickness="0"
                         Cursor="Hand" Click="BtnCancel_Click" Margin="0,0,10,0"/>
-                <Button x:Name="BtnConfirm" Content="Confirm" Padding="20,10"
+                <Button x:Name="BtnConfirm" Content="确认" Padding="20,10"
                         Background="#FF69B4" Foreground="White" BorderThickness="0"
                         Cursor="Hand" Click="BtnConfirm_Click" IsEnabled="False"/>
             </StackPanel>
         </Grid>
     </Border>
 </Window>
+```
