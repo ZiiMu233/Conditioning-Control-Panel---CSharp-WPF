@@ -1,7 +1,10 @@
+以下是汉化后的 `SessionCompleteWindow.xaml` 代码：
+
+```xml
 <Window x:Class="ConditioningControlPanel.SessionCompleteWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Session Complete"
+        Title="会话完成"
         Width="500" Height="520"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
@@ -19,7 +22,7 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Card Image -->
+            <!-- 卡片图片 -->
             <Border Grid.Row="0" CornerRadius="12" Margin="0,0,0,15" HorizontalAlignment="Center"
                     Background="#252540" Padding="5">
                 <Image x:Name="ImgCard" Width="200" Height="140" Stretch="UniformToFill"
@@ -30,17 +33,17 @@
                 </Image>
             </Border>
             
-            <!-- Main Message -->
+            <!-- 主要信息 -->
             <StackPanel Grid.Row="1" HorizontalAlignment="Center">
-                <TextBlock x:Name="TxtMainMessage" Text="Good Girl!" 
+                <TextBlock x:Name="TxtMainMessage" Text="好女孩！" 
                            Foreground="#FF69B4" FontSize="36" FontWeight="Bold" 
                            HorizontalAlignment="Center"/>
-                <TextBlock x:Name="TxtSubMessage" Text="Session Complete" 
+                <TextBlock x:Name="TxtSubMessage" Text="会话完成" 
                            Foreground="#808090" FontSize="16" 
                            HorizontalAlignment="Center" Margin="0,5,0,0"/>
             </StackPanel>
             
-            <!-- Stats -->
+            <!-- 统计 -->
             <Border Grid.Row="2" Background="#252540" CornerRadius="12" Padding="20" Margin="0,20">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -49,25 +52,25 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     
-                    <!-- Session Name -->
+                    <!-- 会话名称 -->
                     <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                        <TextBlock Text="Session" Foreground="#808090" FontSize="12" HorizontalAlignment="Center"/>
-                        <TextBlock x:Name="TxtSessionName" Text="Morning Drift" 
+                        <TextBlock Text="会话" Foreground="#808090" FontSize="12" HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="TxtSessionName" Text="清晨漂流" 
                                    Foreground="White" FontSize="14" FontWeight="Bold" 
                                    HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                     
-                    <!-- Duration -->
+                    <!-- 时长 -->
                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                        <TextBlock Text="Duration" Foreground="#808090" FontSize="12" HorizontalAlignment="Center"/>
+                        <TextBlock Text="时长" Foreground="#808090" FontSize="12" HorizontalAlignment="Center"/>
                         <TextBlock x:Name="TxtDuration" Text="30:00" 
                                    Foreground="White" FontSize="14" FontWeight="Bold" 
                                    HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                     
-                    <!-- XP Earned -->
+                    <!-- 获得经验 -->
                     <StackPanel Grid.Column="2" HorizontalAlignment="Center">
-                        <TextBlock Text="XP Earned" Foreground="#808090" FontSize="12" HorizontalAlignment="Center"/>
+                        <TextBlock Text="获得经验" Foreground="#808090" FontSize="12" HorizontalAlignment="Center"/>
                         <TextBlock x:Name="TxtXP" Text="+50" 
                                    Foreground="#90EE90" FontSize="18" FontWeight="Bold" 
                                    HorizontalAlignment="Center" Margin="0,4,0,0"/>
@@ -75,8 +78,8 @@
                 </Grid>
             </Border>
             
-            <!-- Close Button -->
-            <Button Grid.Row="3" x:Name="BtnClose" Content="💗 Continue" 
+            <!-- 关闭按钮 -->
+            <Button Grid.Row="3" x:Name="BtnClose" Content="💗 继续" 
                     Background="#FF69B4" Foreground="White" 
                     BorderThickness="0" Padding="30,12" FontSize="16" FontWeight="Bold"
                     Cursor="Hand" Click="BtnClose_Click"
@@ -99,3 +102,4 @@
         </Grid>
     </Border>
 </Window>
+```
