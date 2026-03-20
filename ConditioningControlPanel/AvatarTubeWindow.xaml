@@ -14,13 +14,13 @@
         FontFamily="Comic Sans MS">
 
     <Window.Resources>
-        <!-- Purplish gradient background for speech bubble -->
+        <!-- 紫色渐变背景（用于对话气泡） -->
         <LinearGradientBrush x:Key="BubbleGradient" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#3D2066" Offset="0"/>
             <GradientStop Color="#1A1A2E" Offset="1"/>
         </LinearGradientBrush>
 
-        <!-- Tiny pink scrollbar style -->
+        <!-- 粉色小滚动条样式 -->
         <Style x:Key="TinyPinkScrollBar" TargetType="ScrollBar">
             <Setter Property="Width" Value="6"/>
             <Setter Property="MinWidth" Value="6"/>
@@ -47,7 +47,7 @@
             </Setter>
         </Style>
 
-        <!-- ScrollViewer style using tiny pink scrollbar -->
+        <!-- 使用粉色小滚动条的滚动视图样式 -->
         <Style x:Key="TinyPinkScrollViewer" TargetType="ScrollViewer">
             <Setter Property="Template">
                 <Setter.Value>
@@ -73,11 +73,11 @@
     </Window.Resources>
 
     <Grid>
-        <!-- Viewbox scales content uniformly to fit any screen size -->
+        <!-- Viewbox 按比例缩放内容以适应屏幕尺寸 -->
         <Viewbox x:Name="ContentViewbox" Stretch="Uniform" ClipToBounds="False">
-            <!-- Design canvas at fixed reference size - will be scaled -->
+            <!-- 固定参考尺寸的设计画布 - 将被缩放 -->
             <Grid Width="780" Height="1080" ClipToBounds="False" SnapsToDevicePixels="True">
-            <!-- Tube frame FIRST (behind) - Z-Index 0 implicit -->
+            <!-- Tube 框架在前（背后） - 默认 Z-Index 0 -->
             <Image x:Name="ImgTubeFrame"
                    Source="pack://application:,,,/Resources/tube.png"
                    Stretch="Uniform"
@@ -85,8 +85,8 @@
                    VerticalAlignment="Center"
                    IsHitTestVisible="False"/>
 
-            <!-- Speech Bubble - Z-Index 10, positioned next to avatar -->
-            <!-- Dynamic bubble that sizes to content, grows UPWARD, scrolls when exceeding max -->
+            <!-- 对话气泡 - Z-Index 10，位于 Avatar 旁边 -->
+            <!-- 动态气泡，大小自适应内容，向上增长，超过最大高度时滚动 -->
             <Border x:Name="SpeechBubble"
                     Panel.ZIndex="10"
                     Visibility="Collapsed"
@@ -103,14 +103,14 @@
                     BorderThickness="3"
                     Padding="15,12">
 
-                <!-- ScrollViewer sizes to content, scrolls when over MaxHeight -->
+                <!-- ScrollViewer 根据内容调整大小，超过最大高度时滚动 -->
                 <ScrollViewer x:Name="SpeechScroller"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
                               MaxHeight="280"
                               Style="{StaticResource TinyPinkScrollViewer}">
 
-                    <!-- Speech text with bubbly pink font -->
+                    <!-- 对话文本，使用粉色可爱字体 -->
                     <TextBlock x:Name="TxtSpeech"
                                Text=""
                                Foreground="#FF69B4"
@@ -126,7 +126,7 @@
                 </ScrollViewer>
             </Border>
 
-            <!-- Text Input Panel (hidden by default) - Z-Index 3, positioned near avatar -->
+            <!-- 文本输入面板（默认隐藏）- Z-Index 3，位于 Avatar 附近 -->
             <Border x:Name="InputPanel"
                     Panel.ZIndex="3"
                     Visibility="Collapsed"
@@ -151,7 +151,7 @@
                              VerticalContentAlignment="Center"
                              KeyDown="TxtUserInput_KeyDown"/>
                     <Button x:Name="BtnSendChat"
-                            Content="Send"
+                            Content="发送"
                             Width="50"
                             Height="30"
                             Margin="5,0,0,0"
@@ -164,7 +164,7 @@
                 </StackPanel>
             </Border>
 
-            <!-- Avatar/Sprite - Z-Index 1 implicit, with floating animation -->
+            <!-- Avatar/精灵 - 默认 Z-Index 1，带有浮动动画 -->
             <Border x:Name="AvatarBorder"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Bottom"
@@ -176,7 +176,7 @@
                 <Border.ContextMenu>
                     <ContextMenu x:Name="AvatarContextMenu" Opened="AvatarContextMenu_Opened">
                         <ContextMenu.Resources>
-                            <!-- Dark themed MenuItem style with custom template -->
+                            <!-- 深色主题的 MenuItem 样式，带自定义模板 -->
                             <Style TargetType="{x:Type MenuItem}">
                                 <Setter Property="Background" Value="Transparent"/>
                                 <Setter Property="Foreground" Value="White"/>
@@ -202,7 +202,7 @@
                                                               VerticalAlignment="Center" Visibility="Collapsed"/>
                                                     </Grid>
                                                 </Border>
-                                                <!-- Submenu popup for items with children -->
+                                                <!-- 子菜单弹出窗口（当有子项时） -->
                                                 <Popup x:Name="PART_Popup" IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}"
                                                        Placement="Right" HorizontalOffset="-2" AllowsTransparency="True" Focusable="False"
                                                        PopupAnimation="Fade">
@@ -227,7 +227,7 @@
                                     </Setter.Value>
                                 </Setter>
                             </Style>
-                            <!-- Dark themed Separator -->
+                            <!-- 深色主题分隔线 -->
                             <Style TargetType="{x:Type Separator}">
                                 <Setter Property="Height" Value="1"/>
                                 <Setter Property="Margin" Value="8,4"/>
@@ -261,18 +261,18 @@
                                 </Setter>
                             </Style>
                         </ContextMenu.Style>
-                        <MenuItem x:Name="MenuItemTalkToBambi" Header="💬 Talk to Bambi" Click="MenuItemTalkToBambi_Click" Foreground="#FF69B4" FontWeight="Bold"/>
+                        <MenuItem x:Name="MenuItemTalkToBambi" Header="💬 与 Bambi 对话" Click="MenuItemTalkToBambi_Click" Foreground="#FF69B4" FontWeight="Bold"/>
                         <Separator/>
-                        <MenuItem x:Name="MenuItemDetach" Header="📌 Detach" Click="MenuItemDetach_Click"/>
-                        <MenuItem x:Name="MenuItemAttach" Header="📌 Attach to Main Window" Click="MenuItemAttach_Click" Visibility="Collapsed"/>
-                        <MenuItem x:Name="MenuItemShrink" Header="➖ Shrink" Click="MenuItemShrink_Click" Visibility="Collapsed"/>
-                        <MenuItem x:Name="MenuItemGrow" Header="➕ Grow" Click="MenuItemGrow_Click" Visibility="Collapsed"/>
-                        <MenuItem x:Name="MenuItemDismiss" Header="✖ Dismiss" Click="MenuItemDismiss_Click" Visibility="Collapsed"/>
+                        <MenuItem x:Name="MenuItemDetach" Header="📌 分离" Click="MenuItemDetach_Click"/>
+                        <MenuItem x:Name="MenuItemAttach" Header="📌 附加到主窗口" Click="MenuItemAttach_Click" Visibility="Collapsed"/>
+                        <MenuItem x:Name="MenuItemShrink" Header="➖ 缩小" Click="MenuItemShrink_Click" Visibility="Collapsed"/>
+                        <MenuItem x:Name="MenuItemGrow" Header="➕ 放大" Click="MenuItemGrow_Click" Visibility="Collapsed"/>
+                        <MenuItem x:Name="MenuItemDismiss" Header="✖ 关闭" Click="MenuItemDismiss_Click" Visibility="Collapsed"/>
                         <Separator/>
-                        <MenuItem x:Name="MenuItemEngine" Header="▶ Start Engine" Click="MenuItemEngine_Click" Foreground="#90EE90"/>
-                        <MenuItem x:Name="MenuItemTriggerMode" Header="☐ Trigger Mode" Click="MenuItemTriggerMode_Click"/>
-                        <MenuItem x:Name="MenuItemBambiTakeover" Header="☐ Bimbo Takeover" Click="MenuItemBambiTakeover_Click"/>
-                        <MenuItem x:Name="MenuItemPersonality" Header="👤 Personality" Foreground="#FF69B4">
+                        <MenuItem x:Name="MenuItemEngine" Header="▶ 启动引擎" Click="MenuItemEngine_Click" Foreground="#90EE90"/>
+                        <MenuItem x:Name="MenuItemTriggerMode" Header="☐ 触发模式" Click="MenuItemTriggerMode_Click"/>
+                        <MenuItem x:Name="MenuItemBambiTakeover" Header="☐ 傻白甜模式" Click="MenuItemBambiTakeover_Click"/>
+                        <MenuItem x:Name="MenuItemPersonality" Header="👤 个性" Foreground="#FF69B4">
                             <MenuItem.ItemContainerStyle>
                                 <Style TargetType="MenuItem">
                                     <Setter Property="Background" Value="Transparent"/>
@@ -296,14 +296,14 @@
                                 </Style>
                             </MenuItem.ItemContainerStyle>
                         </MenuItem>
-                        <MenuItem x:Name="MenuItemMute" Header="☐ Mute Avatar" Click="MenuItemMute_Click"/>
+                        <MenuItem x:Name="MenuItemMute" Header="☐ 静音 Avatar" Click="MenuItemMute_Click"/>
                         <Separator/>
-                        <MenuItem x:Name="MenuItemMuteWhispers" Header="☐ Mute Whispers" Click="MenuItemMuteWhispers_Click"/>
-                        <MenuItem x:Name="MenuItemPauseBrowser" Header="⏸ Pause Browser" Click="MenuItemPauseBrowser_Click"/>
+                        <MenuItem x:Name="MenuItemMuteWhispers" Header="☐ 静音低语" Click="MenuItemMuteWhispers_Click"/>
+                        <MenuItem x:Name="MenuItemPauseBrowser" Header="⏸ 暂停浏览器" Click="MenuItemPauseBrowser_Click"/>
                     </ContextMenu>
                 </Border.ContextMenu>
                 <Grid>
-                    <!-- Static PNG avatar (default) -->
+                    <!-- 静态 PNG Avatar（默认） -->
                     <Image x:Name="ImgAvatar"
                            Stretch="Uniform"
                            MaxHeight="340"
@@ -315,7 +315,7 @@
                             <DropShadowEffect Color="#FF69B4" BlurRadius="20" ShadowDepth="0" Opacity="0.6"/>
                         </Image.Effect>
                     </Image>
-                    <!-- Animated GIF avatar (for level 20+) -->
+                    <!-- 动态 GIF Avatar（等级 20+） -->
                     <Image x:Name="ImgAvatarAnimated"
                            Stretch="Uniform"
                            MaxHeight="340"
@@ -331,7 +331,7 @@
                 </Grid>
             </Border>
 
-            <!-- Title/Level Box with Avatar Selection - Z-Index 4 to be above everything -->
+            <!-- 标题/等级框，带 Avatar 选择 - Z-Index 4，位于所有元素之上 -->
             <Border x:Name="TitleBox"
                     Panel.ZIndex="4"
                     HorizontalAlignment="Center"
@@ -349,7 +349,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Left Arrow (Previous Avatar) - 50% bigger -->
+                    <!-- 左箭头（上一个 Avatar）- 放大 50% -->
                     <Border x:Name="BtnPrevAvatar" Grid.Column="0"
                             Background="Transparent" Cursor="Hand"
                             MouseLeftButtonDown="BtnPrevAvatar_Click"
@@ -362,7 +362,7 @@
                         </TextBlock>
                     </Border>
 
-                    <!-- Title and Level -->
+                    <!-- 标题和等级 -->
                     <StackPanel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <TextBlock x:Name="TxtAvatarTitle"
                                    Text="BASIC BIMBO"
@@ -376,7 +376,7 @@
                             </TextBlock.Effect>
                         </TextBlock>
                         <TextBlock x:Name="TxtAvatarLevel"
-                                   Text="Lv. 1"
+                                   Text="等级 1"
                                    FontSize="13"
                                    Foreground="#B0B0B0"
                                    TextAlignment="Center"
@@ -384,7 +384,7 @@
                                    Margin="0,-2,0,0"/>
                     </StackPanel>
 
-                    <!-- Right Arrow (Next Avatar) - 50% bigger -->
+                    <!-- 右箭头（下一个 Avatar）- 放大 50% -->
                     <Border x:Name="BtnNextAvatar" Grid.Column="2"
                             Background="Transparent" Cursor="Hand"
                             MouseLeftButtonDown="BtnNextAvatar_Click"
