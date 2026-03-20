@@ -1,8 +1,11 @@
+以下是汉化后的 `SessionEditorWindow.xaml` 代码：
+
+```xml
 <Window x:Class="ConditioningControlPanel.SessionEditorWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:ConditioningControlPanel"
-        Title="Session Editor"
+        Title="会话编辑器"
         Height="765" Width="765"
         MinHeight="680" MinWidth="680"
         WindowStartupLocation="CenterScreen"
@@ -38,13 +41,13 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="Session Editor" Foreground="#E0E0E0" FontSize="12"
+                    <TextBlock Text="会话编辑器" Foreground="#E0E0E0" FontSize="12"
                                VerticalAlignment="Center" Margin="12,8"/>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,4,8,4">
                         <Button x:Name="BtnHelp" Content="?" Click="BtnHelp_Click" Width="24" Height="24"
                                 Background="#FF69B4" Foreground="White" FontSize="12" FontWeight="Bold"
-                                BorderThickness="0" Cursor="Hand" ToolTip="How to use the Session Editor">
+                                BorderThickness="0" Cursor="Hand" ToolTip="如何使用会话编辑器">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Border Background="{TemplateBinding Background}" CornerRadius="12" Width="24" Height="24">
@@ -76,20 +79,20 @@
                         <!-- Session Name + Stats -->
                         <StackPanel Grid.Row="0" Margin="20,12,20,8">
                             <!-- Session Name (editable) -->
-                            <TextBox x:Name="TxtSessionName" Text="My New Session"
+                            <TextBox x:Name="TxtSessionName" Text="我的新会话"
                                      FontSize="22" FontWeight="Bold" Foreground="#FF69B4"
                                      Background="Transparent" BorderThickness="0"
                                      HorizontalAlignment="Center" TextAlignment="Center"
                                      CaretBrush="#FF69B4" SelectionBrush="#FF69B4"
-                                     ToolTip="Click to edit session name"/>
+                                     ToolTip="点击编辑会话名称"/>
 
                             <!-- Auto-calculated stats -->
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,0">
-                                <TextBlock x:Name="TxtDifficulty" Text="⭐ Easy"
+                                <TextBlock x:Name="TxtDifficulty" Text="⭐ 简单"
                                            Foreground="#90EE90" FontSize="11" FontWeight="SemiBold" Margin="0,0,15,0"/>
-                                <TextBlock x:Name="TxtXP" Text="+300 XP"
+                                <TextBlock x:Name="TxtXP" Text="+300 经验"
                                            Foreground="#FFD700" FontSize="11" FontWeight="SemiBold" Margin="0,0,15,0"/>
-                                <TextBlock x:Name="TxtDuration" Text="30 min"
+                                <TextBlock x:Name="TxtDuration" Text="30 分钟"
                                            Foreground="#E0E0E0" FontSize="11" Margin="0,0,0,0"/>
                             </StackPanel>
                         </StackPanel>
@@ -102,7 +105,7 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <TextBlock Text="Duration" Foreground="#B0B0B0" FontSize="11"
+                            <TextBlock Text="时长" Foreground="#B0B0B0" FontSize="11"
                                        VerticalAlignment="Center" Margin="0,0,10,0"/>
 
                             <Slider x:Name="SliderDuration" Grid.Column="1"
@@ -110,7 +113,7 @@
                                     TickFrequency="5" IsSnapToTickEnabled="True"
                                     ValueChanged="SliderDuration_ValueChanged"/>
 
-                            <TextBlock x:Name="TxtDurationValue" Grid.Column="2" Text="30 min"
+                            <TextBlock x:Name="TxtDurationValue" Grid.Column="2" Text="30 分钟"
                                        Foreground="#E0E0E0" FontSize="11" FontWeight="SemiBold"
                                        VerticalAlignment="Center" Margin="10,0,0,0" Width="45"/>
                         </Grid>
@@ -136,7 +139,7 @@
                                         Drop="Timeline_Drop">
                                         <Canvas x:Name="CanvasTimeline" ClipToBounds="True" MinHeight="40" Background="Transparent">
                                             <!-- Timeline events will be added here dynamically -->
-                                            <TextBlock Text="Drag features here to add them to the timeline"
+                                            <TextBlock Text="将功能拖放到此处以添加到时间轴"
                                                    Foreground="#555" FontSize="10" FontStyle="Italic"
                                                    Canvas.Left="8" Canvas.Top="12"
                                                    x:Name="TxtTimelineHint"/>
@@ -159,35 +162,35 @@
 
                                 <!-- AUDIO Category -->
                                 <StackPanel Grid.Column="0" Margin="3,0">
-                                    <TextBlock Text="AUDIO" Foreground="#FF69B4" FontSize="9" FontWeight="SemiBold"
+                                    <TextBlock Text="音频" Foreground="#FF69B4" FontSize="9" FontWeight="SemiBold"
                                                HorizontalAlignment="Center" Margin="0,3,0,5"/>
                                     <StackPanel x:Name="AudioFeatures" HorizontalAlignment="Center"/>
                                 </StackPanel>
 
                                 <!-- VIDEO Category -->
                                 <StackPanel Grid.Column="1" Margin="3,0">
-                                    <TextBlock Text="VIDEO" Foreground="#FF69B4" FontSize="9" FontWeight="SemiBold"
+                                    <TextBlock Text="视频" Foreground="#FF69B4" FontSize="9" FontWeight="SemiBold"
                                                HorizontalAlignment="Center" Margin="0,3,0,5"/>
                                     <StackPanel x:Name="VideoFeatures" HorizontalAlignment="Center"/>
                                 </StackPanel>
 
                                 <!-- OVERLAYS Category -->
                                 <StackPanel Grid.Column="2" Margin="3,0">
-                                    <TextBlock Text="OVERLAYS" Foreground="#FF69B4" FontSize="9" FontWeight="SemiBold"
+                                    <TextBlock Text="覆盖层" Foreground="#FF69B4" FontSize="9" FontWeight="SemiBold"
                                                HorizontalAlignment="Center" Margin="0,3,0,5"/>
                                     <StackPanel x:Name="OverlayFeatures" HorizontalAlignment="Center"/>
                                 </StackPanel>
 
                                 <!-- INTERACTIVE Category -->
                                 <StackPanel Grid.Column="3" Margin="3,0">
-                                    <TextBlock Text="INTERACTIVE" Foreground="#FF69B4" FontSize="9" FontWeight="SemiBold"
+                                    <TextBlock Text="互动" Foreground="#FF69B4" FontSize="9" FontWeight="SemiBold"
                                                HorizontalAlignment="Center" Margin="0,3,0,5"/>
                                     <StackPanel x:Name="InteractiveFeatures" HorizontalAlignment="Center"/>
                                 </StackPanel>
 
                                 <!-- EXTRAS Category -->
                                 <StackPanel Grid.Column="4" Margin="3,0">
-                                    <TextBlock Text="EXTRAS" Foreground="#FF69B4" FontSize="9" FontWeight="SemiBold"
+                                    <TextBlock Text="额外" Foreground="#FF69B4" FontSize="9" FontWeight="SemiBold"
                                                HorizontalAlignment="Center" Margin="0,3,0,5"/>
                                     <StackPanel x:Name="ExtrasFeatures" HorizontalAlignment="Center"/>
                                 </StackPanel>
@@ -211,14 +214,14 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
-                                <Button Content="Import" Style="{StaticResource SecondaryButton}"
+                                <Button Content="导入" Style="{StaticResource SecondaryButton}"
                                         Click="BtnImport_Click" Margin="0,0,8,0" FontSize="11" Padding="12,6"/>
-                                <Button Grid.Column="1" Content="Export" Style="{StaticResource SecondaryButton}"
+                                <Button Grid.Column="1" Content="导出" Style="{StaticResource SecondaryButton}"
                                         Click="BtnExport_Click" FontSize="11" Padding="12,6"/>
 
-                                <Button Grid.Column="3" Content="Cancel" Style="{StaticResource SecondaryButton}"
+                                <Button Grid.Column="3" Content="取消" Style="{StaticResource SecondaryButton}"
                                         Click="BtnCancel_Click" Margin="0,0,8,0" FontSize="11" Padding="12,6"/>
-                                <Button Grid.Column="4" Content="Save Session" Style="{StaticResource PinkButton}"
+                                <Button Grid.Column="4" Content="保存会话" Style="{StaticResource PinkButton}"
                                         Click="BtnSave_Click" FontSize="11" Padding="12,6"/>
                             </Grid>
 
@@ -229,13 +232,13 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <TextBlock Text="Vibe Description" Foreground="#888" FontSize="10" Margin="0,0,0,4"/>
+                                <TextBlock Text="氛围描述" Foreground="#888" FontSize="10" Margin="0,0,0,4"/>
                                 <TextBox x:Name="TxtDescription" Grid.Row="1"
                                          Height="55" TextWrapping="Wrap" AcceptsReturn="True"
                                          Background="#252542" Foreground="#E0E0E0"
                                          BorderBrush="#353555" BorderThickness="1"
                                          Padding="8" FontSize="11" VerticalScrollBarVisibility="Auto"
-                                         ToolTip="Enter a description for your session"/>
+                                         ToolTip="输入会话描述"/>
                             </Grid>
                         </Grid>
                     </Grid>
@@ -273,7 +276,7 @@
                         <!-- Header -->
                         <Border Grid.Row="0" Background="#252542" CornerRadius="10,10,0,0" Padding="20,15">
                             <Grid>
-                                <TextBlock Text="📖 How to Use the Session Editor"
+                                <TextBlock Text="📖 如何使用会话编辑器"
                                            Foreground="#FF69B4" FontSize="18" FontWeight="Bold"
                                            HorizontalAlignment="Center"/>
                                 <Button Content="✕" Click="TutorialOverlay_Close"
@@ -294,10 +297,10 @@
                                                 <TextBlock Text="1" Foreground="White" FontWeight="Bold"
                                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
-                                            <TextBlock Text="Hover to See Description" Foreground="#E0E0E0" FontSize="14" FontWeight="SemiBold"
+                                            <TextBlock Text="悬停查看说明" Foreground="#E0E0E0" FontSize="14" FontWeight="SemiBold"
                                                        VerticalAlignment="Center"/>
                                         </StackPanel>
-                                        <TextBlock Text="Hover over any feature icon to see its name and a brief description of what it does."
+                                        <TextBlock Text="将鼠标悬停在任何功能图标上，即可查看其名称和简要说明。"
                                                    Foreground="#B0B0B0" FontSize="13" TextWrapping="Wrap" Margin="34,0,0,0"/>
                                     </StackPanel>
                                 </Border>
@@ -310,10 +313,10 @@
                                                 <TextBlock Text="2" Foreground="White" FontWeight="Bold"
                                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
-                                            <TextBlock Text="Drag to Create Segments" Foreground="#E0E0E0" FontSize="14" FontWeight="SemiBold"
+                                            <TextBlock Text="拖拽创建片段" Foreground="#E0E0E0" FontSize="14" FontWeight="SemiBold"
                                                        VerticalAlignment="Center"/>
                                         </StackPanel>
-                                        <TextBlock Text="Drag a feature icon onto the timeline to create a colored segment. Each segment shows when the effect starts and ends."
+                                        <TextBlock Text="将功能图标拖放到时间轴上，创建彩色片段。每个片段显示效果的开始和结束时间。"
                                                    Foreground="#B0B0B0" FontSize="13" TextWrapping="Wrap" Margin="34,0,0,0"/>
                                     </StackPanel>
                                 </Border>
@@ -326,10 +329,10 @@
                                                 <TextBlock Text="3" Foreground="White" FontWeight="Bold"
                                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
-                                            <TextBlock Text="Resize &amp; Move Segments" Foreground="#E0E0E0" FontSize="14" FontWeight="SemiBold"
+                                            <TextBlock Text="调整大小和移动片段" Foreground="#E0E0E0" FontSize="14" FontWeight="SemiBold"
                                                        VerticalAlignment="Center"/>
                                         </StackPanel>
-                                        <TextBlock Text="Drag the left or right edge handles to resize the segment. Drag the colored bar itself to move the entire segment."
+                                        <TextBlock Text="拖拽片段的左边缘或右边缘手柄来调整大小。拖拽彩色条本身可以移动整个片段。"
                                                    Foreground="#B0B0B0" FontSize="13" TextWrapping="Wrap" Margin="34,0,0,0"/>
                                     </StackPanel>
                                 </Border>
@@ -342,10 +345,10 @@
                                                 <TextBlock Text="4" Foreground="White" FontWeight="Bold"
                                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
-                                            <TextBlock Text="Right-Click to Edit Settings" Foreground="#E0E0E0" FontSize="14" FontWeight="SemiBold"
+                                            <TextBlock Text="右键编辑设置" Foreground="#E0E0E0" FontSize="14" FontWeight="SemiBold"
                                                        VerticalAlignment="Center"/>
                                         </StackPanel>
-                                        <TextBlock Text="Right-click any segment on the timeline to open its settings popup. Adjust parameters like intensity, frequency, and more."
+                                        <TextBlock Text="右键点击时间轴上的任何片段，打开设置弹窗。可以调整强度、频率等参数。"
                                                    Foreground="#B0B0B0" FontSize="13" TextWrapping="Wrap" Margin="34,0,0,0"/>
                                     </StackPanel>
                                 </Border>
@@ -358,10 +361,10 @@
                                                 <TextBlock Text="*" Foreground="White" FontWeight="Bold" FontSize="14"
                                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
-                                            <TextBlock Text="Full Session Coverage" Foreground="#4CAF50" FontSize="14" FontWeight="SemiBold"
+                                            <TextBlock Text="整个会话全覆盖" Foreground="#4CAF50" FontSize="14" FontWeight="SemiBold"
                                                        VerticalAlignment="Center"/>
                                         </StackPanel>
-                                        <TextBlock Text="To make an effect last the entire session, simply drag its right edge all the way to the end of the timeline."
+                                        <TextBlock Text="要使效果持续整个会话，只需将其右边缘一直拖拽到时间轴末端。"
                                                    Foreground="#A5D6A7" FontSize="13" TextWrapping="Wrap" Margin="34,0,0,0"/>
                                     </StackPanel>
                                 </Border>
@@ -370,7 +373,7 @@
 
                         <!-- Footer -->
                         <Border Grid.Row="2" Background="#252542" CornerRadius="0,0,10,10" Padding="20,15">
-                            <Button Content="Got it!" Style="{StaticResource PinkButton}"
+                            <Button Content="知道了！" Style="{StaticResource PinkButton}"
                                     HorizontalAlignment="Center" Click="TutorialOverlay_Close"
                                     Padding="40,10"/>
                         </Border>
@@ -380,3 +383,4 @@
         </Border>
     </Grid>
 </Window>
+```
