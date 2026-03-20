@@ -1,7 +1,7 @@
 <Window x:Class="ConditioningControlPanel.LoginDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Login" Height="560" Width="420"
+        Title="登录" Height="560" Width="420"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
         Background="#1A1A2E" WindowStyle="None" AllowsTransparency="True"
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
@@ -15,17 +15,17 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Title -->
+            <!-- 标题区域 -->
             <StackPanel Grid.Row="0" Margin="0,0,0,20">
-                <TextBlock Text="Welcome!"
+                <TextBlock Text="欢迎！"
                            FontSize="28" FontWeight="Bold" Foreground="#FF69B4"
                            HorizontalAlignment="Center"/>
-                <TextBlock Text="Choose how you'd like to login"
+                <TextBlock Text="选择登录方式"
                            FontSize="13" Foreground="#B0B0B0"
                            HorizontalAlignment="Center" Margin="0,5,0,0"/>
             </StackPanel>
 
-            <!-- Provider Selection (Initial State) -->
+            <!-- 登录方式选择（初始状态） -->
             <StackPanel x:Name="ProviderPanel" Grid.Row="2" VerticalAlignment="Center">
                 <Button x:Name="BtnLoginDiscord"
                         Padding="20,15" Margin="0,0,0,15"
@@ -34,7 +34,7 @@
                         Cursor="Hand" Click="BtnLoginDiscord_Click">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#x1F3AE;" FontSize="20" Margin="0,0,10,0"/>
-                        <TextBlock Text="Login with Discord" VerticalAlignment="Center"/>
+                        <TextBlock Text="使用 Discord 登录" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
 
@@ -45,7 +45,7 @@
                         Cursor="Hand" Click="BtnLoginPatreon_Click">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#x2B50;" FontSize="20" Margin="0,0,10,0"/>
-                        <TextBlock Text="Login with Patreon" VerticalAlignment="Center"/>
+                        <TextBlock Text="使用 Patreon 登录" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
 
@@ -56,25 +56,25 @@
                         Cursor="Hand" Click="BtnLoginAccount_Click">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#x1F512;" FontSize="20" Margin="0,0,10,0"/>
-                        <TextBlock Text="Anonymous Login" VerticalAlignment="Center"/>
+                        <TextBlock Text="匿名登录" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
 
             </StackPanel>
 
-            <!-- Account Login/Register Panel -->
+            <!-- 账号登录/注册面板 -->
             <StackPanel x:Name="AccountPanel" Grid.Row="2" Visibility="Collapsed" VerticalAlignment="Center">
-                <TextBlock x:Name="TxtAccountTitle" Text="Login"
+                <TextBlock x:Name="TxtAccountTitle" Text="登录"
                            FontSize="16" FontWeight="Bold" Foreground="White"
                            HorizontalAlignment="Center" Margin="0,0,0,15"/>
 
-                <!-- Invite code field (register mode only) -->
+                <!-- 邀请码字段（仅注册模式） -->
                 <TextBlock x:Name="LblInviteCodeHint"
-                           Text="For an invite code please ask a discord mod/admin or CodeBambi directly :3"
+                           Text="如需邀请码，请联系 Discord 管理员或直接询问 CodeBambi :3"
                            FontSize="11" Foreground="#808080" TextWrapping="Wrap"
                            HorizontalAlignment="Center" Margin="0,0,0,8"
                            Visibility="Collapsed"/>
-                <TextBlock x:Name="LblInviteCode" Text="Invite Code"
+                <TextBlock x:Name="LblInviteCode" Text="邀请码"
                            FontSize="12" Foreground="#B0B0B0" Margin="0,0,0,4"
                            Visibility="Collapsed"/>
                 <TextBox x:Name="TxtInviteCode" FontSize="14" Padding="10,8"
@@ -82,23 +82,23 @@
                          MaxLength="8" HorizontalAlignment="Stretch" Visibility="Collapsed"
                          CharacterCasing="Upper"/>
 
-                <!-- Display name field (login mode only) -->
-                <TextBlock x:Name="LblDisplayName" Text="Display Name"
+                <!-- 显示名字段（仅登录模式） -->
+                <TextBlock x:Name="LblDisplayName" Text="显示名称"
                            FontSize="12" Foreground="#B0B0B0" Margin="0,0,0,4"
                            Visibility="Collapsed"/>
                 <TextBox x:Name="TxtLoginDisplayName" FontSize="14" Padding="10,8"
                          Background="#252542" Foreground="White" BorderBrush="#FF69B4"
                          MaxLength="30" HorizontalAlignment="Stretch" Visibility="Collapsed"/>
 
-                <!-- Password -->
-                <TextBlock x:Name="LblPassword" Text="Password"
+                <!-- 密码 -->
+                <TextBlock x:Name="LblPassword" Text="密码"
                            FontSize="12" Foreground="#B0B0B0" Margin="0,10,0,4"/>
                 <PasswordBox x:Name="TxtPassword" FontSize="14" Padding="10,8"
                              Background="#252542" Foreground="White" BorderBrush="#FF69B4"
                              MaxLength="128"/>
 
-                <!-- Confirm password (register mode only) -->
-                <TextBlock x:Name="LblPasswordConfirm" Text="Confirm Password"
+                <!-- 确认密码（仅注册模式） -->
+                <TextBlock x:Name="LblPasswordConfirm" Text="确认密码"
                            FontSize="12" Foreground="#B0B0B0" Margin="0,10,0,4"
                            Visibility="Collapsed"/>
                 <PasswordBox x:Name="TxtPasswordConfirm" FontSize="14" Padding="10,8"
@@ -110,7 +110,7 @@
                            HorizontalAlignment="Center"/>
 
                 <Button x:Name="BtnAccountSubmit"
-                        Content="Login"
+                        Content="登录"
                         Padding="30,12" Margin="0,15,0,0"
                         Background="#FF69B4" Foreground="White"
                         BorderThickness="0" FontWeight="Bold" FontSize="14"
@@ -121,22 +121,22 @@
                            FontSize="12" Foreground="#B0B0B0"
                            HorizontalAlignment="Center" Cursor="Hand"
                            MouseLeftButtonDown="TxtAccountToggle_Click">
-                    <Run Text="Don't have an account? "/>
-                    <Run Text="Create one" Foreground="#FF69B4" TextDecorations="Underline"/>
+                    <Run Text="没有账号？"/>
+                    <Run Text="创建一个" Foreground="#FF69B4" TextDecorations="Underline"/>
                 </TextBlock>
 
-                <TextBlock Text="Back" Margin="0,10,0,0"
+                <TextBlock Text="返回" Margin="0,10,0,0"
                            FontSize="12" Foreground="#808080"
                            HorizontalAlignment="Center" Cursor="Hand"
                            MouseLeftButtonDown="BtnAccountBack_Click"/>
             </StackPanel>
 
-            <!-- Username Entry Panel (for new accounts) -->
+            <!-- 用户名输入面板（用于新账号） -->
             <StackPanel x:Name="UsernamePanel" Grid.Row="2" Visibility="Collapsed" VerticalAlignment="Center">
-                <TextBlock x:Name="TxtUsernameTitle" Text="Choose your display name"
+                <TextBlock x:Name="TxtUsernameTitle" Text="选择你的显示名称"
                            FontSize="16" FontWeight="Bold" Foreground="White"
                            HorizontalAlignment="Center" Margin="0,0,0,5"/>
-                <TextBlock x:Name="TxtUsernameSubtitle" Text="This will be shown on the leaderboard"
+                <TextBlock x:Name="TxtUsernameSubtitle" Text="这将在排行榜上显示"
                            FontSize="12" Foreground="#B0B0B0"
                            HorizontalAlignment="Center" Margin="0,0,0,15"/>
 
@@ -146,11 +146,11 @@
                          HorizontalAlignment="Stretch"/>
 
                 <TextBlock x:Name="TxtAvailability" FontSize="11" Margin="0,8,0,0"
-                           Foreground="#B0B0B0" Text="Enter a unique name (3-30 characters)"
+                           Foreground="#B0B0B0" Text="输入唯一名称（3-30个字符）"
                            HorizontalAlignment="Center"/>
 
                 <Button x:Name="BtnConfirmUsername"
-                        Content="Confirm"
+                        Content="确认"
                         Padding="30,12" Margin="0,20,0,0"
                         Background="#FF69B4" Foreground="White"
                         BorderThickness="0" FontWeight="Bold" FontSize="14"
@@ -159,17 +159,17 @@
                         Click="BtnConfirmUsername_Click"/>
             </StackPanel>
 
-            <!-- Loading Panel -->
+            <!-- 加载中面板 -->
             <StackPanel x:Name="LoadingPanel" Grid.Row="2" Visibility="Collapsed"
                         VerticalAlignment="Center" HorizontalAlignment="Center">
-                <TextBlock x:Name="TxtLoadingMessage" Text="Connecting..."
+                <TextBlock x:Name="TxtLoadingMessage" Text="连接中..."
                            FontSize="16" Foreground="White" HorizontalAlignment="Center"/>
                 <ProgressBar IsIndeterminate="True" Width="200" Height="4" Margin="0,15,0,0"
                              Foreground="#FF69B4" Background="#352545"/>
             </StackPanel>
 
-            <!-- Cancel Button -->
-            <Button x:Name="BtnCancel" Grid.Row="3" Content="Cancel"
+            <!-- 取消按钮 -->
+            <Button x:Name="BtnCancel" Grid.Row="3" Content="取消"
                     Padding="20,8" HorizontalAlignment="Right"
                     Background="Transparent" Foreground="#808080"
                     BorderThickness="0" Cursor="Hand"
