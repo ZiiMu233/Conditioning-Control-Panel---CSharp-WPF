@@ -1,7 +1,7 @@
 <Window x:Class="ConditioningControlPanel.DisplayNameDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Choose Your Display Name"
+        Title="选择显示名称"
         Height="240" Width="450"
         WindowStartupLocation="CenterOwner"
         Background="#1A1A2E"
@@ -26,28 +26,28 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Title -->
-            <TextBlock x:Name="TxtTitle" Grid.Row="0" Text="Welcome! Choose Your Display Name"
+            <!-- 标题 -->
+            <TextBlock x:Name="TxtTitle" Grid.Row="0" Text="欢迎！选择你的显示名称"
                        Foreground="{StaticResource PinkBrush}"
                        FontSize="18" FontWeight="Bold" Margin="0,0,0,10"
                        HorizontalAlignment="Center"/>
 
-            <!-- Warning -->
+            <!-- 警告 -->
             <Border x:Name="WarningPanel" Grid.Row="1" Background="#2A2A3E" CornerRadius="4" Padding="12,8" Margin="0,0,0,15">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBlock Text="Warning:" Foreground="{StaticResource WarningBrush}"
+                    <TextBlock Text="警告：" Foreground="{StaticResource WarningBrush}"
                                FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
-                    <TextBlock Text=" This name cannot be changed later!"
+                    <TextBlock Text=" 此名称之后无法更改！"
                                Foreground="{StaticResource WarningBrush}"
                                FontSize="12" VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>
 
-            <!-- Prompt -->
-            <TextBlock Grid.Row="2" Text="Enter the name you'd like to be called:"
+            <!-- 提示 -->
+            <TextBlock Grid.Row="2" Text="输入你希望被称呼的名字："
                        Foreground="White" FontSize="13" Margin="0,0,0,8"/>
 
-            <!-- Input -->
+            <!-- 输入框 -->
             <TextBox x:Name="TxtDisplayName" Grid.Row="3"
                      Background="#252542" Foreground="White"
                      BorderBrush="{StaticResource PinkBrush}"
@@ -55,17 +55,17 @@
                      MaxLength="20"
                      KeyDown="TxtDisplayName_KeyDown"/>
 
-            <!-- Character count -->
-            <TextBlock x:Name="TxtCharCount" Grid.Row="4" Text="0/20 characters"
+            <!-- 字符计数 -->
+            <TextBlock x:Name="TxtCharCount" Grid.Row="4" Text="0/20 字符"
                        Foreground="#888" FontSize="11" Margin="0,5,0,0"
                        HorizontalAlignment="Right" VerticalAlignment="Top"/>
 
-            <!-- Buttons -->
+            <!-- 按钮 -->
             <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
-                <Button Content="Cancel" Width="90" Padding="10,10" Margin="0,0,10,0"
+                <Button Content="取消" Width="90" Padding="10,10" Margin="0,0,10,0"
                         Background="#404060" Foreground="White" BorderThickness="0"
                         Click="BtnCancel_Click" Cursor="Hand" FontSize="13"/>
-                <Button x:Name="BtnConfirm" Content="Confirm" Width="90" Padding="10,10"
+                <Button x:Name="BtnConfirm" Content="确认" Width="90" Padding="10,10"
                         Background="{StaticResource PinkBrush}" Foreground="White"
                         BorderThickness="0" FontWeight="Bold" FontSize="13"
                         Click="BtnConfirm_Click" Cursor="Hand" IsEnabled="False"/>
